@@ -1,0 +1,3 @@
+as a 1
+as b "tes\"\\t"
+as c (add a (mul b 2.0))
