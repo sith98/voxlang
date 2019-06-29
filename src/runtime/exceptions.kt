@@ -12,6 +12,7 @@ class WrongNumberOfArgumentsException(line: Int, expectedNumber: Int, actualNumb
 class WrongArgumentException(line: Int, cause: String) : VoxRuntimeException(line, cause)
 class ListOutOfBoundException(line: Int, listSize: Int, index: Int) :
     VoxRuntimeException(line, "Index out of bounds (index: $index, list size: $listSize)")
+class ForLoopException(line: Int, cause: String) : VoxRuntimeException(line, cause)
 
 
 fun expectedType(line: Int, arg: Value, type: Value): Nothing {

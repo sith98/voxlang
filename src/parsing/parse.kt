@@ -22,7 +22,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     val (expr) = parseExpression(tokens)
                     Assignment(identifier.name, expr)
                 }
-                KeywordE.VARAS -> {
+                KeywordE.VAR_AS -> {
                     val (identifier) = tokens.nextAs<Identifier>()
                     val (expr) = parseExpression(tokens)
                     GroupedStatement(
@@ -54,6 +54,12 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     val (expression) = parseExpression(tokens)
                     val (body) = parseStatement(tokens)
                     While(expression, body)
+                }
+                KeywordE.FOR -> {
+                    val (identifier) = tokens.nextAs<Identifier>()
+                    val (expr) = parseExpression(tokens)
+                    val (body) = parseStatement(tokens)
+                    For(identifier.name, expr, body)
                 }
                 KeywordE.FUNCTION -> {
                     val (name) = tokens.nextAs<Identifier>()

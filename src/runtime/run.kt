@@ -29,14 +29,15 @@ fun runAst(statements: List<WithLine<Statement>>) {
 }
 
 // returns whether to continue execution in current function scope
-fun runStatement(line: Int, statement: Statement, scope: Scope) {
-    when (statement) {
+fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
+    return when (statement) {
         is Definition -> {
             val (name) = statement
             if (scope.isVariableDefinedInThisScope(name)) {
                 throw VariableException(line, "Cannot define variable $name because it already exists.")
             }
             scope.defineVariable(name)
+            true
         }
         is Assignment -> {
             val (name, expression) = statement
@@ -47,6 +48,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
                 throw VariableException(line, "Cannot assign to constant $name")
             }
             scope.setValue(name, evaluateExpression(line, expression, scope))
+            true
         }
         is ConstantDefinition -> {
             val (name, expression) = statement
@@ -55,34 +57,75 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
                 throw VariableException(line, "Cannot define variable $name because it already exists.")
             }
             scope.defineConstant(name, evaluateExpression(line, expression, scope))
+            true
         }
         is FunctionCall -> {
             evaluateFunctionExpression(line, statement.function, scope)
+            true
         }
         is Block -> {
             val blockScope = Scope(label = "Block@$line", parentScope = scope)
             for ((subStatement, subLine) in statement.statements) {
-                runStatement(subLine, subStatement, blockScope)
-                if (!scope.continueExecution) {
-                    return
+                val continueExecution = runStatement(subLine, subStatement, blockScope)
+                if (!continueExecution) {
+                    return false
                 }
             }
+            true
         }
         is IfElse -> {
             val (condition, thenBody, elseBody) = statement
             val isTrue = isTruthy(evaluateExpression(line, condition, scope))
             if (isTrue) {
-                runStatement(line, thenBody, scope)
+                return runStatement(line, thenBody, scope)
             } else if (elseBody != null) {
-                runStatement(line, elseBody, scope)
+                return runStatement(line, elseBody, scope)
             }
+            true
         }
         is While -> {
             val (condition, body) = statement
             while (isTruthy(evaluateExpression(line, condition, scope))) {
-                runStatement(line, body, scope)
-                if (!scope.continueExecution) {
-                    return
+                val continueExecution = runStatement(line, body, scope)
+                if (!continueExecution) {
+                    return false
+                }
+            }
+            true
+        }
+        is For -> {
+            val (identifier, iterableExpr, body) = statement
+            if (!scope.isVariableDefined(identifier)) {
+                throw ForLoopException(line, "For loop variable $identifier has to be defined beforehand.")
+            }
+            when (val iterable = evaluateExpression(line, iterableExpr, scope)) {
+                is ListValue -> {
+                    val list = iterable.value
+                    for (element in list) {
+                        scope.setValue(identifier, element)
+                        val continueExecution = runStatement(line, body, scope)
+                        if (!continueExecution) {
+                            return false
+                        }
+                    }
+                    true
+                }
+                is DictValue -> {
+                    val dict = iterable.value
+                    for (key in dict.keys) {
+                        scope.setValue(identifier, key)
+                        val continueExecution = runStatement(line, body, scope)
+                        if (!continueExecution) {
+                            return false
+                        }
+                    }
+                    true
+                }
+                else -> {
+                    throw ForLoopException(
+                        line,
+                        "Can only iterate over value of type ${valueTypeName(listZero)} or ${valueTypeName(dictZero)}, found ${valueTypeName(iterable)}"
+                    )
                 }
             }
         }
@@ -95,19 +138,17 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
                 )
             }
             functionScope.returnValue = evaluateExpression(line, statement.expression, scope)
-            scope.terminateFunction()
+            false
         }
         is GroupedStatement -> {
             for (subStatement in statement.statements) {
-                runStatement(line, subStatement, scope)
-                if (!scope.continueExecution) {
-                    return
+                val continueExecution = runStatement(line, subStatement, scope)
+                if (!continueExecution) {
+                    return false
                 }
             }
+            true
         }
-    }
-    if (!scope.continueExecution) {
-        return
     }
 }
 

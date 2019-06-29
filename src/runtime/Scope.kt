@@ -12,11 +12,10 @@ class Scope(val label: String, val parentScope: Scope? = null, val isFunctionSco
         private set
 
     fun terminateFunction() {
-        if (label == "Global" && parentScope != null) {
-            println(parentScope)
-        }
         continueExecution = false
-        parentScope?.terminateFunction()
+        if (!isFunctionScope) {
+            parentScope?.terminateFunction()
+        }
     }
 
     fun isVariableDefinedInThisScope(identifier: String): Boolean {

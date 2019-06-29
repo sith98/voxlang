@@ -2,7 +2,7 @@ package parsing
 
 enum class KeywordE(val word: String) {
     VAR("var"),
-    VARAS("varas"),
+    VAR_AS("varas"),
     CONST("const"),
     AS("as"),
     RETURN("return"),
@@ -12,6 +12,7 @@ enum class KeywordE(val word: String) {
     IF("if"),
     ELSE("else"),
     WHILE("while"),
+    FOR("for"),
     FUNC("func"),
     FUNCTION("function"),
     NIL("nil"),
