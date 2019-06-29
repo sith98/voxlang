@@ -1,2 +1,37 @@
+# boolean logic
 function not [x]
     if x return false else return true
+
+# arithmetic
+function inc [x]
+    return (sub x -1)
+
+function dec [x]
+    return (sub x 1)
+
+
+# comparisons
+function neq [a b]
+    return (not (eq a b))
+
+function leq [a b]
+    return (or (lt a b) (eq a b))
+
+function gt [a b]
+    return (and (not (lt a b)) (not (eq a b)))
+
+function geq [a b]
+    return (not (lt a b))
+
+
+# operator aliases
+const + add
+const - sub
+const * mul
+const / div
+const = eq
+const != neq
+const < lt
+const <= leq
+const > gt
+const >= geq
