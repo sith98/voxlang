@@ -44,6 +44,8 @@ data class StringValue(val value: String) : Value()
 data class ListValue(val value: MutableList<Value>) : Value()
 data class DictValue(val value: MutableMap<Value, Value>) : Value()
 data class FunctionValue(val parameters: List<String>, val body: Statement, val outerScope: Scope) : Value()
+data class NativeFunctionValue(val nativeFunction: NativeFunction) : Value()
+data class SpecialFunctionValue(val specialFunction: SpecialFunction) : Value()
 
 val intZero = IntValue.of(0)
 val floatZero = FloatValue(0.0)
@@ -111,6 +113,6 @@ fun valueTypeName(value: Value): String {
         is StringValue -> "String"
         is ListValue -> "List"
         is DictValue -> "Dict"
-        is FunctionValue -> "Func"
+        is FunctionValue, is NativeFunctionValue, is SpecialFunctionValue -> "Func"
     }
 }
