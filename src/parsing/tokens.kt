@@ -3,6 +3,7 @@ package parsing
 enum class KeywordE(val word: String) {
     VAR("var"),
     VARAS("varas"),
+    CONST("const"),
     AS("as"),
     RETURN("return"),
     EXIT("exit"),

@@ -28,7 +28,21 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
             if (!scope.isVariableDefined(name)) {
                 throw VariableException(line, "Cannot assign to variable $name because it does not exist.")
             }
+            if (scope.isConstant(name)) {
+                throw VariableException(line, "Cannot assign to constant $name")
+            }
             scope.setValue(name, evaluateExpression(line, expression, scope))
+        }
+        is ConstantDefinition -> {
+            val (name, expression) = statement
+
+            if (scope.isVariableDefinedInThisScope(name)) {
+                throw VariableException(line, "Cannot define variable $name because it already exists.")
+            }
+            if (name in illegalVariableNames) {
+                throw VariableException(line, "Cannot define variable $name as this is an illegal variable name")
+            }
+            scope.defineConstant(name, evaluateExpression(line, expression, scope))
         }
         is FunctionCall -> {
             evaluateFunctionExpression(line, statement.function, scope)

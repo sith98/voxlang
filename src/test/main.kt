@@ -1,15 +1,22 @@
 package test
 
-import parsing.TokenStream
-import parsing.parse
-import parsing.tokenize
+import parsing.*
+import runtime.VoxRuntimeException
 import runtime.runAst
 import java.io.File
 
 fun main() {
-    val text = File("src/test/test.vox").readText()
-    val tokens = TokenStream(tokenize(text))
+    try {
+        val text = File("src/test/test.vox").readText()
+        val tokens = TokenStream(tokenize(text))
 
-    val ast = parse(tokens)
-    runAst(ast)
+        val ast = parse(tokens)
+        runAst(ast)
+    } catch (exception: TokenizeException) {
+        println(exception.message)
+    } catch (exception: ParsingException) {
+        println(exception.message)
+    } catch (exception: VoxRuntimeException) {
+        println(exception.message)
+    }
 }

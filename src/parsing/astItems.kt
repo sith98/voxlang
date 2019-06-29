@@ -13,6 +13,7 @@ data class FunctionDefinition(val args: List<String>, val body: Statement) : Exp
 sealed class Statement
 data class Definition(val name: String) : Statement()
 data class Assignment(val name: String, val value: Expression) : Statement()
+data class ConstantDefinition(val name: String, val value: Expression) : Statement()
 data class FunctionCall(val function: FunctionExpression) : Statement()
 data class Block(val statements: List<WithLine<Statement>>) : Statement()
 data class IfElse(val condition: Expression, val thenBody: Statement, val elseBody: Statement?) : Statement()

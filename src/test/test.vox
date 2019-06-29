@@ -11,8 +11,11 @@ end
 # this line should not be parsed at all
 varas count (counter)
 
-(print (count))
-(print (count))
-(print (count))
-(print (count))
-(print (count))
+
+const PI 3.14159
+
+(print (mul PI 2))
+
+as PI 42
+
+(print (mul PI 2))

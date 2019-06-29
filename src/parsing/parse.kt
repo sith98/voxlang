@@ -32,6 +32,11 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                         )
                     )
                 }
+                KeywordE.CONST -> {
+                    val (identifier) = tokens.nextAs<Identifier>()
+                    val (expr) = parseExpression(tokens)
+                    ConstantDefinition(identifier.name, expr)
+                }
                 KeywordE.RETURN -> {
                     val (expr) = parseExpression(tokens)
                     Return(expr)
@@ -53,12 +58,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                 KeywordE.FUNCTION -> {
                     val (name) = tokens.nextAs<Identifier>()
                     val functionDefinition = parseFunctionDefinition(tokens)
-                    GroupedStatement(
-                        listOf(
-                            Definition(name.name),
-                            Assignment(name.name, functionDefinition)
-                        )
-                    )
+                    ConstantDefinition(name.name, functionDefinition)
                 }
                 else -> throw ParsingException(line, "Unexpected keyword ${token.keyword.word}")
             }
