@@ -2,10 +2,19 @@ package runtime
 
 import parsing.*
 
+fun loadStdLib(): List<WithLine<Statement>> {
+    val source = object {}.javaClass.getResource("/runtime/stdlib/stdlib.vox").readText()
+    return parse(TokenStream(tokenize(source)))
+}
+
 fun runAst(statements: List<WithLine<Statement>>) {
     val scope = Scope()
-    for (statementWithLine in statements) {
-        val (statement, line) = statementWithLine
+    val stdLib = loadStdLib()
+
+    for ((statement, line) in stdLib) {
+        runStatement(line, statement, scope)
+    }
+    for ((statement, line) in statements) {
         runStatement(line, statement, scope)
     }
 }
