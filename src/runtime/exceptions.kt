@@ -29,6 +29,13 @@ fun expectedOneOfTwoTypes(line: Int, arg: Value, typeOne: Value, typeTwo: Value)
         actualType = valueTypeName(arg)
     )
 }
+fun expectedOneOfThreeTypes(line: Int, arg: Value, typeOne: Value, typeTwo: Value, typeThree: Value): Nothing {
+    throw InvalidTypeException(
+        line,
+        expectedType = "${valueTypeName(typeOne)}, ${valueTypeName(typeTwo)} or ${valueTypeName(typeThree)}",
+        actualType = valueTypeName(arg)
+    )
+}
 
 fun argumentsCheck(line: Int, args: List<Value>, expectedNumber: Int) {
     if (args.size != expectedNumber) {

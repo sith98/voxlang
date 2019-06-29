@@ -217,17 +217,24 @@ val nativeFunctions = mapOf<String, NativeFunction>(
     "in" to { line, args ->
         argumentsCheck(line, args, 2)
         val (collection, key) = args
-        when (collection) {
+        BoolValue.of(when (collection) {
             is ListValue -> {
                 val list = collection.value
-                BoolValue.of(key in list)
+                key in list
             }
             is DictValue -> {
                 val dict = collection.value
-                BoolValue.of(key in dict)
+                key in dict
             }
-            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
-        }
+            is RangeValue -> {
+                when (key) {
+                    is IntValue -> collection.start <= key.value && key.value <= collection.end
+                    is FloatValue -> collection.start <= key.value && key.value <= collection.end
+                    else -> expectedOneOfTwoTypes(line, key, intZero, floatZero)
+                }
+            }
+            else -> expectedOneOfThreeTypes(line, collection, listZero, dictZero, rangeZero)
+        })
     },
     "append" to { line, args ->
         argumentsCheck(line, args, 2)
@@ -250,6 +257,26 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             dict[args[i]] = args[i + 1]
         }
         DictValue(dict)
+    },
+    "range" to { line, args ->
+        if (args.size > 3) {
+            throw WrongNumberOfArgumentsException(line, 3, args.size)
+        }
+        if (args.size < 2) {
+            throw WrongNumberOfArgumentsException(line, 2, args.size)
+        }
+        val (start, end) = args
+        val step = if (args.size == 3) args[2] else IntValue.of(1)
+        if (start !is IntValue) {
+            expectedType(line, start, intZero)
+        }
+        if (end !is IntValue) {
+            expectedType(line, end, intZero)
+        }
+        if (step !is IntValue) {
+            expectedType(line, step, intZero)
+        }
+        RangeValue(start.value, end.value, step.value)
     },
     "size" to { line, args ->
         argumentsCheck(line, args, 1)

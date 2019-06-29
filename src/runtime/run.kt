@@ -121,6 +121,20 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                     }
                     true
                 }
+                is RangeValue -> {
+                    val (start, end, step) = iterable
+                    var i = start
+
+                    while (step > 0 && i <= end || step < 0 && i >= end) {
+                        scope.setValue(identifier, IntValue.of(i))
+                        val continueExecution = runStatement(line, body, scope)
+                        if (!continueExecution) {
+                            return false
+                        }
+                        i += step
+                    }
+                    true
+                }
                 else -> {
                     throw ForLoopException(
                         line,

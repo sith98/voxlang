@@ -43,6 +43,7 @@ data class BoolValue internal constructor(val value: Boolean) : Value() {
 data class StringValue(val value: String) : Value()
 data class ListValue(val value: MutableList<Value>) : Value()
 data class DictValue(val value: MutableMap<Value, Value>) : Value()
+data class RangeValue(val start: Int, val end: Int, val step: Int) : Value()
 data class FunctionValue(val parameters: List<String>, val body: Statement, val outerScope: Scope) : Value()
 data class NativeFunctionValue(val nativeFunction: NativeFunction) : Value()
 data class SpecialFunctionValue(val specialFunction: SpecialFunction) : Value()
@@ -50,9 +51,10 @@ data class SpecialFunctionValue(val specialFunction: SpecialFunction) : Value()
 val intZero = IntValue.of(0)
 val floatZero = FloatValue(0.0)
 val boolZero = BoolValue.of(false)
+val stringZero = StringValue("")
 val listZero = ListValue(mutableListOf())
 val dictZero = DictValue(mutableMapOf())
-val stringZero = StringValue("")
+val rangeZero = RangeValue(0, 0, 1)
 val functionZero = FunctionValue(listOf(), Block(listOf()), Scope("MockScope"))
 
 val boolFalse = BoolValue.of(false)
@@ -113,6 +115,7 @@ fun valueTypeName(value: Value): String {
         is StringValue -> "String"
         is ListValue -> "List"
         is DictValue -> "Dict"
+        is RangeValue -> "Range"
         is FunctionValue, is NativeFunctionValue, is SpecialFunctionValue -> "Func"
     }
 }
