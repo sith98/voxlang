@@ -50,7 +50,8 @@ val keywordMap = run {
 val paranMap = symbolMap.filterValues { it.isParen }
 val identStart: Set<Char> = ('a' .. 'z').union('A' .. 'Z') + "_-+*/%><&|'!?$=~".toSet()
 val identMiddle = identStart.union('0' .. '9')
-val numStart = ('0' .. '9').toSet()
+private val digit = ('0' .. '9').toSet()
+val numStart = digit.union(setOf('-', '+'))
 val numMiddle = numStart.union(setOf('.'))
 val whitespace = setOf(' ', '\n', '\r', '\t')
 val stringStart = setOf('"')

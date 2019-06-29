@@ -2,12 +2,13 @@ package parsing
 
 enum class TokenizingState {
     WHITESPACE,
-    IDENT,
+    IDENTIFIER,
     STRING,
     STRING_ESCAPE,
     NUM,
     SYMBOL,
     COMMENT,
+    IDENTIFIER_OR_NUM
 }
 
 fun tokenize(text: String): List<WithLine<Token>> {
@@ -21,6 +22,24 @@ fun tokenize(text: String): List<WithLine<Token>> {
         tokens.add(WithLine(token, line))
     }
 
+    fun endOfIdentifier(char: Char) {
+        val identifier = currentToken.toString()
+        val keyword = keywordMap[identifier]
+        if (keyword == null) {
+            addToken(Identifier(identifier))
+        } else {
+            addToken(Keyword(keyword))
+        }
+        when (char) {
+            in whitespace -> state = TokenizingState.WHITESPACE
+            in commentStart -> state = TokenizingState.COMMENT
+            else -> {
+                currentToken = StringBuilder().append(char)
+                state = TokenizingState.SYMBOL
+            }
+        }
+    }
+
     for (char in "$text ") {
         if (char == '\n') {
             line += 1
@@ -30,7 +49,7 @@ fun tokenize(text: String): List<WithLine<Token>> {
                 when (char) {
                     in identStart -> {
                         currentToken = StringBuilder().append(char)
-                        state = TokenizingState.IDENT
+                        state = if (char in numStart) TokenizingState.IDENTIFIER_OR_NUM else TokenizingState.IDENTIFIER
                     }
                     in numStart -> {
                         currentToken = StringBuilder().append(char)
@@ -55,27 +74,28 @@ fun tokenize(text: String): List<WithLine<Token>> {
                     }
                 }
             }
-            TokenizingState.IDENT -> {
+            TokenizingState.IDENTIFIER -> {
                 when (char) {
                     in identMiddle -> {
                         currentToken.append(char)
                     }
                     else -> {
-                        val iden = currentToken.toString()
-                        val keyword = keywordMap[iden]
-                        if (keyword == null) {
-                            addToken(Identifier(iden))
-                        } else {
-                            addToken(Keyword(keyword))
-                        }
-                        when (char) {
-                            in whitespace -> state = TokenizingState.WHITESPACE
-                            in commentStart -> state = TokenizingState.COMMENT
-                            else -> {
-                                currentToken = StringBuilder().append(char)
-                                state = TokenizingState.SYMBOL
-                            }
-                        }
+                        endOfIdentifier(char)
+                    }
+                }
+            }
+            TokenizingState.IDENTIFIER_OR_NUM -> {
+                when (char) {
+                    in numMiddle -> {
+                        currentToken.append(char)
+                        state = TokenizingState.NUM
+                    }
+                    in identMiddle -> {
+                        currentToken.append(char)
+                        state = TokenizingState.IDENTIFIER
+                    }
+                    else -> {
+                        endOfIdentifier(char)
                     }
                 }
             }
@@ -129,7 +149,7 @@ fun tokenize(text: String): List<WithLine<Token>> {
                         else -> {
                             currentToken = StringBuilder().append(char)
                             state = when (char) {
-                                in identStart -> TokenizingState.IDENT
+                                in identStart -> if (char in numStart) TokenizingState.IDENTIFIER_OR_NUM else TokenizingState.IDENTIFIER
                                 in numStart -> TokenizingState.NUM
                                 in allowedSymbolCharacters -> TokenizingState.SYMBOL
                                 else -> throw TokenizeException(line, "Unexpected character: $char")
