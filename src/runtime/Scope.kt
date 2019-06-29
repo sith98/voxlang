@@ -3,7 +3,7 @@ package runtime
 import java.lang.IllegalStateException
 
 
-class Scope(val parentScope: Scope? = null, val isFunctionScope: Boolean = false) {
+class Scope(val label: String, val parentScope: Scope? = null, val isFunctionScope: Boolean = false) {
     private val scope = mutableMapOf<String, Value>()
     private val constants = mutableSetOf<String>()
 
@@ -12,11 +12,11 @@ class Scope(val parentScope: Scope? = null, val isFunctionScope: Boolean = false
         private set
 
     fun terminateFunction() {
-        if (isFunctionScope) {
-            continueExecution = false
-        } else {
-            parentScope?.terminateFunction()
+        if (label == "Global" && parentScope != null) {
+            println(parentScope)
         }
+        continueExecution = false
+        parentScope?.terminateFunction()
     }
 
     fun isVariableDefinedInThisScope(identifier: String): Boolean {
@@ -68,5 +68,7 @@ class Scope(val parentScope: Scope? = null, val isFunctionScope: Boolean = false
             parentScope?.setValue(identifier, newValue)
         }
     }
+
+    override fun toString() = "Scope: $label"
 }
 

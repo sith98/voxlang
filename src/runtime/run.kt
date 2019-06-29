@@ -20,7 +20,7 @@ fun loadStdLibIntoScope(scope: Scope) {
 }
 
 fun runAst(statements: List<WithLine<Statement>>) {
-    val scope = Scope()
+    val scope = Scope("Global")
     loadSpecialAndNativeFunctionsIntoScope(scope)
     loadStdLibIntoScope(scope)
     for ((statement, line) in statements) {
@@ -60,7 +60,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
             evaluateFunctionExpression(line, statement.function, scope)
         }
         is Block -> {
-            val blockScope = Scope(parentScope = scope)
+            val blockScope = Scope(label = "Block@$line", parentScope = scope)
             for ((subStatement, subLine) in statement.statements) {
                 runStatement(subLine, subStatement, blockScope)
                 if (!scope.continueExecution) {
@@ -81,12 +81,15 @@ fun runStatement(line: Int, statement: Statement, scope: Scope) {
             val (condition, body) = statement
             while (isTruthy(evaluateExpression(line, condition, scope))) {
                 runStatement(line, body, scope)
+                if (!scope.continueExecution) {
+                    return
+                }
             }
         }
         is Return -> {
             var functionScope = scope
             while (!functionScope.isFunctionScope) {
-                functionScope = scope.parentScope ?: throw IllegalStatementException(
+                functionScope = functionScope.parentScope ?: throw IllegalStatementException(
                     line,
                     "\"return\" statement is only allowed in functions."
                 )
@@ -160,7 +163,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
         is FunctionValue -> {
             val (parameters, body, outerScope) = value
 
-            val functionScope = Scope(parentScope = outerScope, isFunctionScope = true)
+            val functionScope = Scope("Function($name)@$line", parentScope = outerScope, isFunctionScope = true)
             if (parameters.size != args.size) {
                 throw WrongNumberOfArgumentsException(line, parameters.size, args.size)
             }

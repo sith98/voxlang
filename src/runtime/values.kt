@@ -53,7 +53,7 @@ val boolZero = BoolValue.of(false)
 val listZero = ListValue(mutableListOf())
 val dictZero = DictValue(mutableMapOf())
 val stringZero = StringValue("")
-val functionZero = FunctionValue(listOf(), Block(listOf()), Scope())
+val functionZero = FunctionValue(listOf(), Block(listOf()), Scope("MockScope"))
 
 val boolFalse = BoolValue.of(false)
 val boolTrue = BoolValue.of(true)
