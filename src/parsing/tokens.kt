@@ -1,15 +1,14 @@
 package parsing
 
 enum class KeywordE(val word: String) {
-    DEF("def"),
-    DEFAS("defas"),
+    VAR("var"),
+    VARAS("varas"),
     AS("as"),
-    CALL("call"),
     RETURN("return"),
+    EXIT("EXIT"),
     DO("do"),
     END("end"),
     IF("if"),
-    ELIF("elif"),
     ELSE("else"),
     WHILE("while"),
     FUNC("func"),

@@ -1,19 +1,21 @@
 package parsing
 
-sealed class Expr
-object Nil : Expr()
-data class IntConst(val value: Int) : Expr()
-data class FloatConst(val value: Float) : Expr()
-data class BoolConst(val value: Boolean) : Expr()
-data class StringConst(val value: String) : Expr()
-data class Variable(val name: String) : Expr()
-data class FunctionExpr(val name: String, val args: List<Expr>) : Expr()
-data class FunctionDefinition(val args: List<String>, val body: Statement) : Expr()
+sealed class Expression
+object Nil : Expression()
+data class IntConst(val value: Int) : Expression()
+data class FloatConst(val value: Double) : Expression()
+data class BoolConst(val value: Boolean) : Expression()
+data class StringConst(val value: String) : Expression()
+data class Variable(val name: String) : Expression()
+data class FunctionExpression(val name: String, val args: List<Expression>) : Expression()
+data class FunctionDefinition(val args: List<String>, val body: Statement) : Expression()
 
 sealed class Statement
 data class Definition(val name: String) : Statement()
-data class Assignment(val name: String, val value: Expr) : Statement()
-data class FunctionCall(val function: FunctionExpr) : Statement()
-data class Block(val statements: List<Statement>) : Statement()
-data class If(val condition: Expr, val thenBody: Statement, val elseBody: Statement?) : Statement()
-data class While(val condition: Expr, val body: Statement) : Statement()
+data class Assignment(val name: String, val value: Expression) : Statement()
+data class FunctionCall(val function: FunctionExpression) : Statement()
+data class Block(val statements: List<WithLine<Statement>>) : Statement()
+data class IfElse(val condition: Expression, val thenBody: Statement, val elseBody: Statement?) : Statement()
+data class While(val condition: Expression, val body: Statement) : Statement()
+data class Return(val expression: Expression) : Statement()
+data class GroupedStatement(val statements: List<Statement>) : Statement()
