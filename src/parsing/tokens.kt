@@ -12,6 +12,7 @@ enum class KeywordE(val word: String) {
     ELSE("else"),
     WHILE("while"),
     FUNC("func"),
+    FUNCTION("function"),
     NIL("nil"),
     TRUE("true"),
     FALSE("false")

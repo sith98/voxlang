@@ -50,6 +50,16 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     val (body) = parseStatement(tokens)
                     While(expression, body)
                 }
+                KeywordE.FUNCTION -> {
+                    val (name) = tokens.nextAs<Identifier>()
+                    val functionDefinition = parseFunctionDefinition(tokens)
+                    GroupedStatement(
+                        listOf(
+                            Definition(name.name),
+                            Assignment(name.name, functionDefinition)
+                        )
+                    )
+                }
                 else -> throw ParsingException(line, "Unexpected keyword ${token.keyword.word}")
             }
         }
@@ -102,11 +112,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
                 KeywordE.NIL -> NilExpression
                 KeywordE.TRUE -> BoolConst(true)
                 KeywordE.FALSE -> BoolConst(false)
-                KeywordE.FUNC -> {
-                    val args = parseIdentifierList(tokens).map { it.name }
-                    val (body) = parseStatement(tokens)
-                    FunctionDefinition(args, body)
-                }
+                KeywordE.FUNC -> parseFunctionDefinition(tokens)
                 else -> throw ParsingException(line, "Unexpected keyword ${token.keyword.word}")
             }
         }
@@ -121,6 +127,12 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
             }
         }
     } withLine line
+}
+
+fun parseFunctionDefinition(tokens: TokenStream): FunctionDefinition {
+    val args = parseIdentifierList(tokens).map { it.name }
+    val (body) = parseStatement(tokens)
+    return FunctionDefinition(args, body)
 }
 
 fun parseIdentifierList(tokens: TokenStream): List<Identifier> {

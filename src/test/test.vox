@@ -1,4 +1,4 @@
-varas counter func [] do
+function counter [] do
     varas c 0
     varas count func [] do
         as c (add c 1)
