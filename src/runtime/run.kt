@@ -32,11 +32,13 @@ fun runAst(statements: List<WithLine<Statement>>) {
 fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
     return when (statement) {
         is Definition -> {
-            val (name) = statement
-            if (scope.isVariableDefinedInThisScope(name)) {
-                throw VariableException(line, "Cannot define variable $name because it already exists.")
+            val (names) = statement
+            for (name in names) {
+                if (scope.isVariableDefinedInThisScope(name)) {
+                    throw VariableException(line, "Cannot define variable $name because it already exists.")
+                }
+                scope.defineVariable(name)
             }
-            scope.defineVariable(name)
             true
         }
         is Assignment -> {

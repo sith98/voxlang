@@ -14,8 +14,8 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
         is Keyword -> {
             when (token.keyword) {
                 KeywordE.VAR -> {
-                    val (identifier) = tokens.nextAs<Identifier>()
-                    Definition(identifier.name)
+                    val identifiers = parseIdentifierList(tokens)
+                    Definition(identifiers)
                 }
                 KeywordE.AS -> {
                     val (identifier) = tokens.nextAs<Identifier>()
@@ -27,7 +27,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     val (expr) = parseExpression(tokens)
                     GroupedStatement(
                         listOf(
-                            Definition(identifier.name),
+                            Definition(listOf(identifier.name)),
                             Assignment(identifier.name, expr)
                         )
                     )
@@ -70,7 +70,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     if (variableDeclaration) {
                         Block(
                             listOf(
-                                Definition(identifier.name) withLine line,
+                                Definition(listOf(identifier.name)) withLine line,
                                 For(identifier.name, expr, body) withLine line
                             )
                         )

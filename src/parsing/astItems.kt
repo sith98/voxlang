@@ -11,7 +11,7 @@ data class FunctionExpression(val name: String, val args: List<Expression>) : Ex
 data class FunctionDefinition(val args: List<String>, val body: Statement) : Expression()
 
 sealed class Statement
-data class Definition(val name: String) : Statement()
+data class Definition(val names: List<String>) : Statement()
 data class Assignment(val name: String, val value: Expression) : Statement()
 data class ConstantDefinition(val name: String, val value: Expression) : Statement()
 data class FunctionCall(val function: FunctionExpression) : Statement()
