@@ -93,12 +93,15 @@ fun parseBlock(tokens: TokenStream): Block {
 fun parseIfElse(tokens: TokenStream): IfElse {
     val (expression) = parseExpression(tokens)
     val (thenBody) = parseStatement(tokens)
-    val (nextToken) = tokens.peek()
-    if (nextToken is Keyword) {
-        if (nextToken.keyword == KeywordE.ELSE) {
-            tokens.next()
-            val (elseBody) = parseStatement(tokens)
-            return IfElse(expression, thenBody, elseBody)
+    val nextTokenWithLine = tokens.peekOrNull()
+    if (nextTokenWithLine != null) {
+        val (nextToken) = nextTokenWithLine
+        if (nextToken is Keyword) {
+            if (nextToken.keyword == KeywordE.ELSE) {
+                tokens.next()
+                val (elseBody) = parseStatement(tokens)
+                return IfElse(expression, thenBody, elseBody)
+            }
         }
     }
     return IfElse(expression, thenBody, null)

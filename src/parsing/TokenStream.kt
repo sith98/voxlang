@@ -52,10 +52,13 @@ class TokenStream(private val stream: List<WithLine<Token>>) {
     }
 
     fun peek() =
+        peekOrNull() ?: throw ParsingException(stream.last().line, "Unexpected end of file")
+
+    fun peekOrNull(): WithLine<Token>? =
         if (index < stream.size) {
             stream[index]
         } else {
-            throw ParsingException(stream.last().line, "Unexpected end of file")
+            null
         }
 
 
