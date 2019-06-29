@@ -37,7 +37,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     Return(expr)
                 }
                 KeywordE.EXIT -> {
-                    Return(Nil)
+                    Return(NilExpression)
                 }
                 KeywordE.DO -> {
                     parseBlock(tokens)
@@ -99,7 +99,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
     return when (token) {
         is Keyword -> {
             when (token.keyword) {
-                KeywordE.NIL -> Nil
+                KeywordE.NIL -> NilExpression
                 KeywordE.TRUE -> BoolConst(true)
                 KeywordE.FALSE -> BoolConst(false)
                 KeywordE.FUNC -> {

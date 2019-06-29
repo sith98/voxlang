@@ -1,7 +1,7 @@
 package parsing
 
 sealed class Expression
-object Nil : Expression()
+object NilExpression : Expression()
 data class IntConst(val value: Int) : Expression()
 data class FloatConst(val value: Double) : Expression()
 data class BoolConst(val value: Boolean) : Expression()

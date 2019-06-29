@@ -1,14 +1,18 @@
-var f
-as f func [a b] do
-    return (add a b)
+varas counter func [] do
+    varas c 0
+    varas count func [] do
+        as c (add c 1)
+        return c
+    end
+
+    return count
 end
 
-if (eq a b) do
-    var b
-end else if (lt a b) do
-    as a 1
-end
 
-as a 1
-as b "tes\"\\t"
-as c (add a (mul b 2.0))
+varas count (counter)
+
+(print (count))
+(print (count))
+(print (count))
+(print (count))
+(print (count))
