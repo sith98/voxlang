@@ -67,11 +67,11 @@ private fun valueToString(value: Value, builder: StringBuilder) {
             val list = value.value
             builder.append("[")
             for (i in (0..list.size - 2)) {
-                builder.append(valueToString(list[i], builder))
+                valueToString(list[i], builder)
                 builder.append(", ")
             }
             if (list.size > 0) {
-                builder.append(valueToString(list.last(), builder))
+                valueToString(list.last(), builder)
             }
             builder.append("]")
         }
@@ -82,10 +82,9 @@ private fun valueToString(value: Value, builder: StringBuilder) {
             for ((key, item) in dict) {
                 builder.append(prefix)
                 prefix = ", "
-                builder
-                    .append(valueToString(key, builder))
-                    .append(": ")
-                    .append(valueToString(item, builder))
+                valueToString(key, builder)
+                builder.append(": ")
+                valueToString(item, builder)
             }
             builder.append("}")
         }

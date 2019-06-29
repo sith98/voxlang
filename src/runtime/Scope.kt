@@ -45,7 +45,7 @@ class Scope(val parentScope: Scope? = null, val isFunctionScope: Boolean = false
         return if (isVariableDefinedInThisScope(identifier)) {
             identifier in constants
         } else {
-            parentScope?.isVariableDefinedInThisScope(identifier) ?: false
+            parentScope?.isConstant(identifier) ?: false
         }
     }
 

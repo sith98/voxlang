@@ -93,6 +93,18 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
         }
     },
+    "intdiv" to { line, args ->
+        argumentsCheck(line, args, 2)
+        val (first, second) = args
+        if (first !is IntValue) {
+            expectedType(line, first, intZero)
+        }
+        if (second !is IntValue) {
+            expectedType(line, second, intZero)
+        }
+
+        IntValue.of(first.value / second.value)
+    },
     "mod" to { line, args ->
         argumentsCheck(line, args, 2)
         val (first, second) = args
@@ -127,6 +139,10 @@ val nativeFunctions = mapOf<String, NativeFunction>(
                 is IntValue -> first.value < second.value
                 is FloatValue -> first.value < second.value
                 else -> expectedOneOfTwoTypes(line, second, intZero, floatZero)
+            }
+            is StringValue -> when (second) {
+                is StringValue -> first.value < second.value
+                else -> expectedType(line, second, stringZero)
             }
             else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
         })
@@ -234,6 +250,24 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             dict[args[i]] = args[i + 1]
         }
         DictValue(dict)
+    },
+    "size" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (collection) = args
+        when (collection) {
+            is ListValue -> {
+                IntValue(collection.value.size)
+            }
+            is DictValue -> {
+                IntValue(collection.value.size)
+            }
+            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
+        }
+    },
+    "type" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (value) = args
+        StringValue(valueTypeName(value))
     }
 )
 
