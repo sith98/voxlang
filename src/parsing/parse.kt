@@ -149,6 +149,11 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
         is Symbol -> {
             when (token.symbol) {
                 SymbolE.OPEN_PAREN -> parseFunctionExpression(tokens)
+                SymbolE.LAMBDA -> {
+                    val args = parseIdentifierList(tokens).map { it.name }
+                    val (body) = parseExpression(tokens)
+                    FunctionDefinition(args, Return(body))
+                }
                 else -> throw ParsingException(line, "Unexpected symbol ${token.symbol.symbol}")
             }
         }

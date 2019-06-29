@@ -23,7 +23,8 @@ enum class SymbolE(val symbol: String, val isParen: Boolean = true) {
     OPEN_PAREN("("),
     CLOSE_PAREN(")"),
     OPEN_BRACKET("["),
-    CLOSE_BRACKET("]")
+    CLOSE_BRACKET("]"),
+    LAMBDA("\\"),
 }
 sealed class Token
 data class Identifier(val name: String) : Token()
