@@ -150,7 +150,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
             when (token.symbol) {
                 SymbolE.OPEN_PAREN -> parseFunctionExpression(tokens)
                 SymbolE.LAMBDA -> {
-                    val args = parseIdentifierList(tokens).map { it.name }
+                    val args = parseIdentifierList(tokens)
                     val (body) = parseExpression(tokens)
                     FunctionDefinition(args, Return(body))
                 }
@@ -161,19 +161,30 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
 }
 
 fun parseFunctionDefinition(tokens: TokenStream): FunctionDefinition {
-    val args = parseIdentifierList(tokens).map { it.name }
+    val args = parseIdentifierList(tokens)
     val (body) = parseStatement(tokens)
     return FunctionDefinition(args, body)
 }
 
-fun parseIdentifierList(tokens: TokenStream): List<Identifier> {
-    val identifiers = mutableListOf<Identifier>()
-    tokens.expectSymbol(SymbolE.OPEN_BRACKET)
+fun parseIdentifierList(tokens: TokenStream): List<String> {
+    val identifiers = mutableListOf<String>()
+
+    val (next) = tokens.peek()
+    when (next) {
+        is Symbol -> {
+            tokens.expectSymbol(SymbolE.OPEN_BRACKET)
+        }
+        is Identifier -> {
+            identifiers.add(next.name)
+            tokens.next()
+            return identifiers
+        }
+    }
 
     while (true) {
         val (token) = tokens.peek()
         if (token is Identifier) {
-            identifiers.add(token)
+            identifiers.add(token.name)
             tokens.next()
         } else {
             tokens.expectSymbol(SymbolE.CLOSE_BRACKET)

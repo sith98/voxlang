@@ -1,12 +1,12 @@
 # boolean logic
-function not [x]
+function not x
     if x return false else return true
 
 # arithmetic
-function inc [x]
+function inc x
     return (sub x -1)
 
-function dec [x]
+function dec x
     return (sub x 1)
 
 
