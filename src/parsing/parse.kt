@@ -56,10 +56,27 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     While(expression, body)
                 }
                 KeywordE.FOR -> {
+                    val (next) = tokens.peek()
+                    val variableDeclaration = if (next == Keyword(KeywordE.VAR)) {
+                        tokens.next()
+                        true
+                    } else {
+                        false
+                    }
+
                     val (identifier) = tokens.nextAs<Identifier>()
                     val (expr) = parseExpression(tokens)
                     val (body) = parseStatement(tokens)
-                    For(identifier.name, expr, body)
+                    if (variableDeclaration) {
+                        Block(
+                            listOf(
+                                Definition(identifier.name) withLine line,
+                                For(identifier.name, expr, body) withLine line
+                            )
+                        )
+                    } else {
+                        For(identifier.name, expr, body)
+                    }
                 }
                 KeywordE.FUNCTION -> {
                     val (name) = tokens.nextAs<Identifier>()
