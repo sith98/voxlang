@@ -5,7 +5,7 @@ enum class KeywordE(val word: String) {
     VARAS("varas"),
     AS("as"),
     RETURN("return"),
-    EXIT("EXIT"),
+    EXIT("exit"),
     DO("do"),
     END("end"),
     IF("if"),
@@ -60,3 +60,6 @@ val escapeSequences = mapOf(
     'n' to '\n'
 )
 val allowedSymbolCharacters = SymbolE.values().flatMap { it.symbol.asIterable() }.toSet()
+
+val commentStart = setOf('#')
+val commentEnd = setOf('\n')

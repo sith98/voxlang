@@ -5,10 +5,10 @@ varas counter func [] do
         return c
     end
 
-    return count
+    return count #this is a comment
 end
 
-
+# this line should not be parsed at all
 varas count (counter)
 
 (print (count))

@@ -7,6 +7,7 @@ enum class TokenizingState {
     STRING_ESCAPE,
     NUM,
     SYMBOL,
+    COMMENT,
 }
 
 fun tokenize(text: String): List<WithLine<Token>> {
@@ -46,6 +47,9 @@ fun tokenize(text: String): List<WithLine<Token>> {
                         currentToken = StringBuilder().append(char)
                         state = TokenizingState.SYMBOL
                     }
+                    in commentStart -> {
+                        state = TokenizingState.COMMENT
+                    }
                     else -> {
                         throw TokenizeException(line, "Unexpected character: $char")
                     }
@@ -64,11 +68,13 @@ fun tokenize(text: String): List<WithLine<Token>> {
                         } else {
                             addToken(Keyword(keyword))
                         }
-                        if (char in whitespace) {
-                            state = TokenizingState.WHITESPACE
-                        } else {
-                            currentToken = StringBuilder().append(char)
-                            state = TokenizingState.SYMBOL
+                        when (char) {
+                            in whitespace -> state = TokenizingState.WHITESPACE
+                            in commentStart -> state = TokenizingState.COMMENT
+                            else -> {
+                                currentToken = StringBuilder().append(char)
+                                state = TokenizingState.SYMBOL
+                            }
                         }
                     }
                 }
@@ -101,11 +107,13 @@ fun tokenize(text: String): List<WithLine<Token>> {
                         double != null -> addToken(FloatLiteral(double))
                         else -> throw TokenizeException(line, "Illegal number literal: $literal")
                     }
-                    if (char in whitespace) {
-                        state = TokenizingState.WHITESPACE
-                    } else {
-                        currentToken = StringBuilder().append(char)
-                        state = TokenizingState.SYMBOL
+                    when (char) {
+                        in whitespace -> state = TokenizingState.WHITESPACE
+                        in commentStart -> state = TokenizingState.COMMENT
+                        else -> {
+                            currentToken = StringBuilder().append(char)
+                            state = TokenizingState.SYMBOL
+                        }
                     }
                 }
             }
@@ -117,6 +125,7 @@ fun tokenize(text: String): List<WithLine<Token>> {
                     when (char) {
                         in whitespace -> state = TokenizingState.WHITESPACE
                         in stringStart -> state = TokenizingState.STRING
+                        in commentStart -> state = TokenizingState.COMMENT
                         else -> {
                             currentToken = StringBuilder().append(char)
                             state = when (char) {
@@ -129,6 +138,11 @@ fun tokenize(text: String): List<WithLine<Token>> {
                     }
                 } else {
                     currentToken.append(char)
+                }
+            }
+            TokenizingState.COMMENT -> {
+                if (char in commentEnd) {
+                    state = TokenizingState.WHITESPACE
                 }
             }
         }
