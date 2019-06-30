@@ -6,58 +6,62 @@ typealias NativeFunction = (line: Int, List<Value>) -> Value
 
 val nativeFunctions = mapOf<String, NativeFunction>(
     "add" to { line, args ->
-        var intSum = 0
-        var floatSum = 0.0
-        var floatAddition = false
-        for (arg in args) {
-            when (arg) {
-                is IntValue -> {
-                    if (floatAddition) {
+        variadicFunction(line, args) { innerLine, innerArgs ->
+            var intSum = 0
+            var floatSum = 0.0
+            var floatAddition = false
+            for (arg in innerArgs) {
+                when (arg) {
+                    is IntValue -> {
+                        if (floatAddition) {
+                            floatSum += arg.value
+                        } else {
+                            intSum += arg.value
+                        }
+                    }
+                    is FloatValue -> {
+                        if (!floatAddition) {
+                            floatSum += intSum
+                        }
+                        floatAddition = true
                         floatSum += arg.value
-                    } else {
-                        intSum += arg.value
                     }
-                }
-                is FloatValue -> {
-                    if (!floatAddition) {
-                        floatSum += intSum
+                    else -> {
+                        expectedOneOfTwoTypes(innerLine, arg, intZero, floatZero)
                     }
-                    floatAddition = true
-                    floatSum += arg.value
-                }
-                else -> {
-                    expectedOneOfTwoTypes(line, arg, intZero, floatZero)
                 }
             }
+            if (floatAddition) FloatValue(floatSum) else IntValue.of(intSum)
         }
-        if (floatAddition) FloatValue(floatSum) else IntValue.of(intSum)
     },
     "mul" to { line, args ->
-        var intProduct = 1
-        var floatProduct = 1.0
-        var floatMultiplication = false
-        for (arg in args) {
-            when (arg) {
-                is IntValue -> {
-                    if (floatMultiplication) {
+        variadicFunction(line, args) { innerLine, innerArgs ->
+            var intProduct = 1
+            var floatProduct = 1.0
+            var floatMultiplication = false
+            for (arg in innerArgs) {
+                when (arg) {
+                    is IntValue -> {
+                        if (floatMultiplication) {
+                            floatProduct *= arg.value
+                        } else {
+                            intProduct *= arg.value
+                        }
+                    }
+                    is FloatValue -> {
+                        if (!floatMultiplication) {
+                            floatProduct *= intProduct
+                        }
+                        floatMultiplication = true
                         floatProduct *= arg.value
-                    } else {
-                        intProduct *= arg.value
                     }
-                }
-                is FloatValue -> {
-                    if (!floatMultiplication) {
-                        floatProduct *= intProduct
+                    else -> {
+                        expectedOneOfTwoTypes(innerLine, arg, intZero, floatZero)
                     }
-                    floatMultiplication = true
-                    floatProduct *= arg.value
-                }
-                else -> {
-                    expectedOneOfTwoTypes(line, arg, intZero, floatZero)
                 }
             }
+            if (floatMultiplication) FloatValue(floatProduct) else IntValue.of(intProduct)
         }
-        if (floatMultiplication) FloatValue(floatProduct) else IntValue.of(intProduct)
     },
     "sub" to { line, args ->
         argumentsCheck(line, args, 2)
@@ -129,23 +133,25 @@ val nativeFunctions = mapOf<String, NativeFunction>(
     "lt" to { line, args ->
         argumentsCheck(line, args, 2)
         val (first, second) = args
-        BoolValue.of(when (first) {
-            is IntValue -> when (second) {
-                is IntValue -> first.value < second.value
-                is FloatValue -> first.value < second.value
-                else -> expectedOneOfTwoTypes(line, second, intZero, floatZero)
+        BoolValue.of(
+            when (first) {
+                is IntValue -> when (second) {
+                    is IntValue -> first.value < second.value
+                    is FloatValue -> first.value < second.value
+                    else -> expectedOneOfTwoTypes(line, second, intZero, floatZero)
+                }
+                is FloatValue -> when (second) {
+                    is IntValue -> first.value < second.value
+                    is FloatValue -> first.value < second.value
+                    else -> expectedOneOfTwoTypes(line, second, intZero, floatZero)
+                }
+                is StringValue -> when (second) {
+                    is StringValue -> first.value < second.value
+                    else -> expectedType(line, second, stringZero)
+                }
+                else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
             }
-            is FloatValue -> when (second) {
-                is IntValue -> first.value < second.value
-                is FloatValue -> first.value < second.value
-                else -> expectedOneOfTwoTypes(line, second, intZero, floatZero)
-            }
-            is StringValue -> when (second) {
-                is StringValue -> first.value < second.value
-                else -> expectedType(line, second, stringZero)
-            }
-            else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
-        })
+        )
     },
     "print" to { line, args ->
         for (arg in args) {
@@ -155,16 +161,12 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         Nil
     },
     "concat" to { line, args ->
-        argumentsCheck(line, args, 1)
-        val (list) = args
-        if (list is ListValue) {
+        variadicFunction(line, args) { _, list ->
             val builder = StringBuilder()
-            for (item in list.value) {
+            for (item in list) {
                 builder.append(valueToString(item))
             }
             StringValue(builder.toString())
-        } else {
-            expectedType(line, list, listZero)
         }
     },
     "get" to { line, args ->
@@ -217,24 +219,26 @@ val nativeFunctions = mapOf<String, NativeFunction>(
     "in" to { line, args ->
         argumentsCheck(line, args, 2)
         val (collection, key) = args
-        BoolValue.of(when (collection) {
-            is ListValue -> {
-                val list = collection.value
-                key in list
-            }
-            is DictValue -> {
-                val dict = collection.value
-                key in dict
-            }
-            is RangeValue -> {
-                when (key) {
-                    is IntValue -> collection.start <= key.value && key.value <= collection.end
-                    is FloatValue -> collection.start <= key.value && key.value <= collection.end
-                    else -> expectedOneOfTwoTypes(line, key, intZero, floatZero)
+        BoolValue.of(
+            when (collection) {
+                is ListValue -> {
+                    val list = collection.value
+                    key in list
                 }
+                is DictValue -> {
+                    val dict = collection.value
+                    key in dict
+                }
+                is RangeValue -> {
+                    when (key) {
+                        is IntValue -> collection.start <= key.value && key.value <= collection.end
+                        is FloatValue -> collection.start <= key.value && key.value <= collection.end
+                        else -> expectedOneOfTwoTypes(line, key, intZero, floatZero)
+                    }
+                }
+                else -> expectedOneOfThreeTypes(line, collection, listZero, dictZero, rangeZero)
             }
-            else -> expectedOneOfThreeTypes(line, collection, listZero, dictZero, rangeZero)
-        })
+        )
     },
     "append" to { line, args ->
         argumentsCheck(line, args, 2)
@@ -298,13 +302,27 @@ val nativeFunctions = mapOf<String, NativeFunction>(
     }
 )
 
+fun variadicFunction(line: Int, args: List<Value>, fn: NativeFunction): Value {
+    if (args.isEmpty()) {
+        throw WrongNumberOfArgumentsException(line, 1, 0)
+    }
+    return if (args.size == 1) {
+        val (list) = args
+        if (list !is ListValue) {
+            expectedType(line, list, listZero)
+        }
+        fn(line, list.value)
+    } else {
+        fn(line, args)
+    }
+}
+
 enum class SpecialFunction(val identifier: String) {
     AND("and"), OR("or");
+
     companion object {
         fun byIdentifier(identifier: String): SpecialFunction? {
             return values().find { it.identifier == identifier }
         }
     }
 }
-
-val illegalVariableNames = nativeFunctions.keys.union(SpecialFunction.values().map{ it.identifier })
