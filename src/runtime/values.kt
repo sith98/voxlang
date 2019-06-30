@@ -26,7 +26,14 @@ data class IntValue private constructor(val value: Int) : Value() {
     }
 }
 
-data class FloatValue(val value: Double) : Value()
+data class FloatValue(val value: Double) : Value() {
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+    override fun equals(other: Any?): Boolean {
+        return other is FloatValue && value == other.value
+    }
+}
 data class BoolValue private constructor(val value: Boolean) : Value() {
     companion object {
         private val boolFalse = BoolValue(false)

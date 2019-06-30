@@ -125,7 +125,7 @@ fun parseIfElse(tokens: TokenStream): IfElse {
     while (true) {
         nextTokenWithLine = tokens.peek()
         nextToken = nextTokenWithLine.token
-        if (nextToken is Keyword && (nextToken.keyword == KeywordE.END || nextToken.keyword == KeywordE.ELSE || nextToken.keyword == KeywordE.ELIF)) {
+        if (nextToken is Keyword && (nextToken.keyword == KeywordE.END || nextToken.keyword == KeywordE.ELSE || nextToken.keyword == KeywordE.ELSE_IF)) {
             break
         }
         thenBody.add(parseStatement(tokens))
@@ -140,7 +140,7 @@ fun parseIfElse(tokens: TokenStream): IfElse {
     if (keyword.keyword == KeywordE.ELSE) {
         return IfElse(expression, Block(thenBody), parseBlock(tokens))
     }
-    if (keyword.keyword == KeywordE.ELIF) {
+    if (keyword.keyword == KeywordE.ELSE_IF) {
         return IfElse(expression, Block(thenBody), Block(listOf(parseIfElse(tokens) withLine nextTokenWithLine.line)))
     }
     throw IllegalStateException("Should be unreachable")

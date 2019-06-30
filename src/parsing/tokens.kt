@@ -11,7 +11,7 @@ enum class KeywordE(val word: String) {
     END("end"),
     IF("if"),
     ELSE("else"),
-    ELIF("elif"),
+    ELSE_IF("elif"),
     WHILE("while"),
     FOR("for"),
     FUNC("func"),
