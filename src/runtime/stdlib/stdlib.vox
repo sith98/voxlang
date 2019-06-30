@@ -15,6 +15,14 @@ function dec x
     return (sub x 1)
 end
 
+const nan (div 0 0)
+const infinity (div 1 0)
+const minusInfinity (div -1 0)
+
+function isNan x
+    return (neq x x)
+end
+
 
 # comparisons
 function neq [a b]
