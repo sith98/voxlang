@@ -508,5 +508,5 @@ fun variadicFunction(line: Int, args: List<Value>, fn: NativeFunction): Value {
 }
 
 enum class SpecialFunction(val identifier: String) {
-    AND("and"), OR("or");
+    AND("and"), OR("or"), CHOICE("choice")
 }

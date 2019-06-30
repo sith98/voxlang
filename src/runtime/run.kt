@@ -216,6 +216,17 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                     }
                     return BoolValue.of(false)
                 }
+                SpecialFunction.CHOICE -> {
+                    if (args.size != 3) {
+                        throw WrongNumberOfArgumentsException(line, 3, args.size)
+                    }
+                    val (condition, ifTrue, ifFalse) = args
+                    return if (isTruthy(evaluateExpression(line, condition, scope))) {
+                        evaluateExpression(line, ifTrue, scope)
+                    } else {
+                        evaluateExpression(line, ifFalse, scope)
+                    }
+                }
             }
         }
         is NativeFunctionValue -> {
