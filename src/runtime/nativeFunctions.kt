@@ -1,5 +1,8 @@
 package runtime
 
+import kotlin.math.pow
+import kotlin.random.Random
+
 typealias NativeFunction = (line: Int, List<Value>) -> Value
 
 val nativeFunctions = mapOf<String, NativeFunction>(
@@ -125,6 +128,17 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
         }
     },
+    "pow" to { line, args ->
+        argumentsCheck(line, args, 2)
+        val (base, exponent) = args
+        if (base !is FloatValue) {
+            expectedType(line, base, floatZero)
+        }
+        if (exponent !is FloatValue) {
+            expectedType(line, exponent, floatZero)
+        }
+        FloatValue(base.value.pow(exponent.value))
+    },
 
     // comparisons
     "eq" to { line, args ->
@@ -228,7 +242,7 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
     },
 
-    // Input Output
+    // Effects
     "print" to { _, args ->
         for (arg in args) {
             print(valueToString(arg))
@@ -247,6 +261,10 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             expectedType(line, msg, stringZero)
         }
         throw UserPanicExcpetion(line, "[panic] ${msg.value}")
+    },
+    "random" to { line, args ->
+        argumentsCheck(line, args, 0)
+        FloatValue(Random.nextDouble())
     },
 
     // string functions
