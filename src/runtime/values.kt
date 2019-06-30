@@ -44,7 +44,7 @@ data class StringValue(val value: String) : Value()
 data class ListValue(val value: MutableList<Value>) : Value()
 data class DictValue(val value: MutableMap<Value, Value>) : Value()
 data class RangeValue(val start: Int, val end: Int, val step: Int) : Value()
-data class FunctionValue(val parameters: List<String>, val body: Statement, val outerScope: Scope) : Value()
+data class FunctionValue(val parameters: List<String>, val body: Block, val outerScope: Scope) : Value()
 data class NativeFunctionValue(val nativeFunction: NativeFunction) : Value()
 data class SpecialFunctionValue(val specialFunction: SpecialFunction) : Value()
 

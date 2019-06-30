@@ -1,33 +1,40 @@
 # boolean logic
 function not x
-    if x return false else return true
+    if x return false
+    else return true
+    end
+end
 
 # arithmetic
 function inc x
     return (sub x -1)
+end
 
 function dec x
     return (sub x 1)
-
+end
 
 # comparisons
 function neq [a b]
     return (not (eq a b))
+end
 
 function leq [a b]
     return (or (lt a b) (eq a b))
+end
 
 function gt [a b]
     return (and (not (lt a b)) (not (eq a b)))
+end
 
 function geq [a b]
     return (not (lt a b))
-
+end
 
 # conversions
 function string x
     return (concat "" x)
-
+end
 
 # operator aliases
 const + add

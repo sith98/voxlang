@@ -66,29 +66,22 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
             true
         }
         is Block -> {
-            val blockScope = Scope(label = "Block@$line", parentScope = scope)
-            for ((subStatement, subLine) in statement.statements) {
-                val continueExecution = runStatement(subLine, subStatement, blockScope)
-                if (!continueExecution) {
-                    return false
-                }
-            }
-            true
+            runBlock(line, statement, scope)
         }
         is IfElse -> {
             val (condition, thenBody, elseBody) = statement
             val isTrue = isTruthy(evaluateExpression(line, condition, scope))
             if (isTrue) {
-                return runStatement(line, thenBody, scope)
+                return runBlock(line, thenBody, scope)
             } else if (elseBody != null) {
-                return runStatement(line, elseBody, scope)
+                return runBlock(line, elseBody, scope)
             }
             true
         }
         is While -> {
             val (condition, body) = statement
             while (isTruthy(evaluateExpression(line, condition, scope))) {
-                val continueExecution = runStatement(line, body, scope)
+                val continueExecution = runBlock(line, body, scope)
                 if (!continueExecution) {
                     return false
                 }
@@ -105,7 +98,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                     val list = iterable.value
                     for (element in list) {
                         scope.setValue(identifier, element)
-                        val continueExecution = runStatement(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope)
                         if (!continueExecution) {
                             return false
                         }
@@ -116,7 +109,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                     val dict = iterable.value
                     for (key in dict.keys) {
                         scope.setValue(identifier, key)
-                        val continueExecution = runStatement(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope)
                         if (!continueExecution) {
                             return false
                         }
@@ -129,7 +122,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
 
                     while (step > 0 && i <= end || step < 0 && i >= end) {
                         scope.setValue(identifier, IntValue.of(i))
-                        val continueExecution = runStatement(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope)
                         if (!continueExecution) {
                             return false
                         }
@@ -166,6 +159,21 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
             true
         }
     }
+}
+
+private fun runBlock(line: Int, block: Block, scope: Scope, newScope: Boolean = true): Boolean {
+    val blockScope = if (newScope) {
+        Scope(label = "Block@$line", parentScope = scope)
+    } else {
+        scope
+    }
+    for ((subStatement, subLine) in block.statements) {
+        val continueExecution = runStatement(subLine, subStatement, blockScope)
+        if (!continueExecution) {
+            return false
+        }
+    }
+    return true
 }
 
 fun evaluateExpression(line: Int, expression: Expression, scope: Scope): Value {
@@ -229,7 +237,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                 functionScope.defineVariable(argName)
                 functionScope.setValue(argName, evaluateExpression(line, arg, scope))
             }
-            runStatement(line, body, functionScope)
+            runBlock(line, body, functionScope, newScope = false)
             return functionScope.returnValue
         }
         else -> {

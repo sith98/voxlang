@@ -1,5 +1,7 @@
 package parsing
 
+import java.lang.IllegalStateException
+
 fun parse(tokens: TokenStream): List<WithLine<Statement>> {
     val ast = mutableListOf<WithLine<Statement>>()
     while (!tokens.isEmpty()) {
@@ -52,7 +54,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                 }
                 KeywordE.WHILE -> {
                     val (expression) = parseExpression(tokens)
-                    val (body) = parseStatement(tokens)
+                    val body = parseBlock(tokens)
                     While(expression, body)
                 }
                 KeywordE.FOR -> {
@@ -66,7 +68,7 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
 
                     val (identifier) = tokens.nextAs<Identifier>()
                     val (expr) = parseExpression(tokens)
-                    val (body) = parseStatement(tokens)
+                    val body = parseBlock(tokens)
                     if (variableDeclaration) {
                         Block(
                             listOf(
@@ -115,19 +117,33 @@ fun parseBlock(tokens: TokenStream): Block {
 
 fun parseIfElse(tokens: TokenStream): IfElse {
     val (expression) = parseExpression(tokens)
-    val (thenBody) = parseStatement(tokens)
-    val nextTokenWithLine = tokens.peekOrNull()
-    if (nextTokenWithLine != null) {
-        val (nextToken) = nextTokenWithLine
-        if (nextToken is Keyword) {
-            if (nextToken.keyword == KeywordE.ELSE) {
-                tokens.next()
-                val (elseBody) = parseStatement(tokens)
-                return IfElse(expression, thenBody, elseBody)
-            }
+
+    val thenBody = mutableListOf<WithLine<Statement>>()
+
+    var nextTokenWithLine: WithLine<Token>
+    var nextToken: Token
+    while (true) {
+        nextTokenWithLine = tokens.peek()
+        nextToken = nextTokenWithLine.token
+        if (nextToken is Keyword && (nextToken.keyword == KeywordE.END || nextToken.keyword == KeywordE.ELSE || nextToken.keyword == KeywordE.ELIF)) {
+            break
         }
+        thenBody.add(parseStatement(tokens))
     }
-    return IfElse(expression, thenBody, null)
+
+    // consume keyword
+    tokens.next()
+    val keyword = nextToken as Keyword
+    if (keyword.keyword == KeywordE.END) {
+        return IfElse(expression, Block(thenBody), null)
+    }
+    if (keyword.keyword == KeywordE.ELSE) {
+        return IfElse(expression, Block(thenBody), parseBlock(tokens))
+    }
+    if (keyword.keyword == KeywordE.ELIF) {
+        return IfElse(expression, Block(thenBody), Block(listOf(parseIfElse(tokens) withLine nextTokenWithLine.line)))
+    }
+    throw IllegalStateException("Should be unreachable")
 }
 
 fun parseExpression(tokens: TokenStream): WithLine<Expression> {
@@ -152,7 +168,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
                 SymbolE.LAMBDA -> {
                     val args = parseIdentifierList(tokens)
                     val (body) = parseExpression(tokens)
-                    FunctionDefinition(args, Return(body))
+                    FunctionDefinition(args, Block(listOf(Return(body) withLine line)))
                 }
                 else -> throw ParsingException(line, "Unexpected symbol ${token.symbol.symbol}")
             }
@@ -162,7 +178,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
 
 fun parseFunctionDefinition(tokens: TokenStream): FunctionDefinition {
     val args = parseIdentifierList(tokens)
-    val (body) = parseStatement(tokens)
+    val body = parseBlock(tokens)
     return FunctionDefinition(args, body)
 }
 
