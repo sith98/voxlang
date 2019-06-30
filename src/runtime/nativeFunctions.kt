@@ -131,6 +131,21 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         argumentsCheck(line, args, 2)
         BoolValue.of(args[0] == args[1])
     },
+    "id" to { line, args ->
+        argumentsCheck(line, args, 2)
+        val (first, second) = args
+        BoolValue.of(if (first == second) {
+            if (first is ListValue && second is ListValue) {
+                first.value === second.value
+            } else if (first is DictValue && second is DictValue) {
+                first.value === second.value
+            } else {
+                false
+            }
+        } else {
+            false
+        })
+    },
     "lt" to { line, args ->
         argumentsCheck(line, args, 2)
         val (first, second) = args
