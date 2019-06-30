@@ -100,7 +100,7 @@ end
 function rangeToList r
     const l (list)
     for var item r
-        (push l r)
+        (push l item)
     end
     return l
 end

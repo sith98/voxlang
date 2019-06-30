@@ -92,7 +92,9 @@ private fun valueToString(value: Value, builder: StringBuilder) {
             }
             builder.append("}")
         }
-        is FunctionValue -> builder.append("[Function]")
+        is RangeValue -> builder.append("<range ${value.start} ${value.end} ${value.step}>")
+        is FunctionValue, is NativeFunctionValue, is SpecialFunctionValue ->
+            builder.append("<func>")
     }
 }
 
