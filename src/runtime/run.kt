@@ -182,7 +182,7 @@ fun evaluateExpression(line: Int, expression: Expression, scope: Scope): Value {
         is IntConst -> IntValue.of(expression.value)
         is FloatConst -> FloatValue(expression.value)
         is BoolConst -> BoolValue.of(expression.value)
-        is StringConst -> StringValue(expression.value)
+        is StringConst -> StringValue.fromCache(expression.value)
         is Variable ->
             scope.getValue(expression.name) ?: throw VariableException(
                 line,

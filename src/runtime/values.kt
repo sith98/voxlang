@@ -1,3 +1,5 @@
+@file:Suppress("DataClassPrivateConstructor")
+
 package runtime
 
 import parsing.Block
@@ -8,7 +10,7 @@ import kotlin.reflect.jvm.internal.impl.load.kotlin.KotlinClassFinder
 
 sealed class Value
 object Nil : Value()
-data class IntValue internal constructor(val value: Int) : Value() {
+data class IntValue private constructor(val value: Int) : Value() {
     companion object {
         private val intCache = Array(256) {
             IntValue(it - 128)
@@ -25,7 +27,7 @@ data class IntValue internal constructor(val value: Int) : Value() {
 }
 
 data class FloatValue(val value: Double) : Value()
-data class BoolValue internal constructor(val value: Boolean) : Value() {
+data class BoolValue private constructor(val value: Boolean) : Value() {
     companion object {
         private val boolFalse = BoolValue(false)
         private val boolTrue = BoolValue(true)
@@ -40,7 +42,14 @@ data class BoolValue internal constructor(val value: Boolean) : Value() {
     }
 }
 
-data class StringValue(val value: String) : Value()
+data class StringValue(val value: String) : Value() {
+    companion object {
+        private val cache = mutableMapOf<String, StringValue>()
+        fun fromCache(value: String): StringValue {
+            return cache.getOrPut(value) { StringValue(value )}
+        }
+    }
+}
 data class ListValue(val value: MutableList<Value>) : Value()
 data class DictValue(val value: MutableMap<Value, Value>) : Value()
 data class RangeValue(val start: Int, val end: Int, val step: Int) : Value()

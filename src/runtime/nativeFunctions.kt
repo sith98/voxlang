@@ -379,10 +379,10 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         val (collection) = args
         when (collection) {
             is ListValue -> {
-                IntValue(collection.value.size)
+                IntValue.of(collection.value.size)
             }
             is DictValue -> {
-                IntValue(collection.value.size)
+                IntValue.of(collection.value.size)
             }
             else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
         }
@@ -495,9 +495,9 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
         ListValue(
             mutableListOf(
-                IntValue(range.start),
-                IntValue(range.end),
-                IntValue(range.step)
+                IntValue.of(range.start),
+                IntValue.of(range.end),
+                IntValue.of(range.step)
             )
         )
     },
