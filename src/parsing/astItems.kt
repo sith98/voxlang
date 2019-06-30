@@ -7,7 +7,7 @@ data class FloatConst(val value: Double) : Expression()
 data class BoolConst(val value: Boolean) : Expression()
 data class StringConst(val value: String) : Expression()
 data class Variable(val name: String) : Expression()
-data class FunctionExpression(val name: String, val args: List<Expression>) : Expression()
+data class FunctionExpression(val function: Expression, val args: List<Expression>) : Expression()
 data class FunctionDefinition(val args: List<String>, val body: Block) : Expression()
 
 sealed class Statement

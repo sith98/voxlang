@@ -211,7 +211,7 @@ fun parseIdentifierList(tokens: TokenStream): List<String> {
 }
 
 fun parseFunctionExpression(tokens: TokenStream): FunctionExpression {
-    val (name) = tokens.nextAs<Identifier>()
+    val (function) = parseExpression(tokens)
     val args = mutableListOf<Expression>()
 
     while (true) {
@@ -224,5 +224,5 @@ fun parseFunctionExpression(tokens: TokenStream): FunctionExpression {
         args.add(expression)
     }
 
-    return FunctionExpression(name.name, args)
+    return FunctionExpression(function, args)
 }

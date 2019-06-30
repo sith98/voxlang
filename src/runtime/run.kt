@@ -195,13 +195,9 @@ fun evaluateExpression(line: Int, expression: Expression, scope: Scope): Value {
 
 @Suppress("FoldInitializerAndIfToElvis")
 fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope: Scope): Value {
-    val (name, args) = expression
+    val (function, args) = expression
 
-    val value = scope.getValue(name)
-    if (value == null) {
-        throw FunctionException(line, "Function with name $name does not exist.")
-    }
-    when (value) {
+    when (val value = evaluateExpression(line, function, scope)) {
         is SpecialFunctionValue -> {
             when (value.specialFunction) {
                 SpecialFunction.AND -> {
@@ -228,7 +224,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
         is FunctionValue -> {
             val (parameters, body, outerScope) = value
 
-            val functionScope = Scope("Function($name)@$line", parentScope = outerScope, isFunctionScope = true)
+            val functionScope = Scope("Function($function)@$line", parentScope = outerScope, isFunctionScope = true)
             if (parameters.size != args.size) {
                 throw WrongNumberOfArgumentsException(line, parameters.size, args.size)
             }
@@ -241,7 +237,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
             return functionScope.returnValue
         }
         else -> {
-            throw FunctionException(line, "\"$name\" is not a function.")
+            throw FunctionException(line, "\"$function\" is not a function.")
         }
     }
 }
