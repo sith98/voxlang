@@ -5,6 +5,7 @@ function not x
     end
 end
 
+
 # arithmetic
 function inc x
     return (sub x -1)
@@ -13,6 +14,7 @@ end
 function dec x
     return (sub x 1)
 end
+
 
 # comparisons
 function neq [a b]
@@ -31,10 +33,78 @@ function geq [a b]
     return (not (lt a b))
 end
 
+
 # conversions
 function string x
     return (concat "" x)
 end
+
+
+# strings
+function length str
+    return (size (charList str))
+end
+
+
+# lists
+function first l
+    return (get l 0)
+end
+
+function second l
+    return (get l 0)
+end
+
+function third l
+    return (get l 0)
+end
+
+function last l
+    return (get l (dec (size l)))
+end
+
+function map [l fn]
+    const newL (list)
+    for var el l
+        (push newL (fn el))
+    end
+    return newL
+end
+
+function filter [l fn]
+    const newL (list)
+    for var el l
+        if (fn el)
+            (push newL el)
+        end
+    end
+    return newL
+end
+
+function addAll [l otherL]
+    for var el otherL
+        (push l el)
+    end
+end
+
+function concatLists lists
+    const newList (list)
+    for var list lists
+        (addAll newList list)
+    end
+    return newList
+end
+
+
+# ranges
+function rangeToList r
+    const l (list)
+    for var item r
+        (push l r)
+    end
+    return l
+end
+
 
 # operator aliases
 const + add

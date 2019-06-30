@@ -3,6 +3,7 @@ package runtime
 typealias NativeFunction = (line: Int, List<Value>) -> Value
 
 val nativeFunctions = mapOf<String, NativeFunction>(
+    // arithmetic
     "add" to { line, args ->
         variadicFunction(line, args) { innerLine, innerArgs ->
             var intSum = 0
@@ -124,6 +125,8 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             else -> expectedOneOfTwoTypes(line, first, intZero, floatZero)
         }
     },
+
+    // comparisons
     "eq" to { line, args ->
         argumentsCheck(line, args, 2)
         BoolValue.of(args[0] == args[1])
@@ -209,6 +212,8 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             }
         }
     },
+
+    // Input Output
     "print" to { _, args ->
         for (arg in args) {
             print(valueToString(arg))
@@ -220,7 +225,17 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         argumentsCheck(line, args, 0)
         readLine()?.let { StringValue(it) } ?: Nil
     },
-    "charlist" to { line, args ->
+    "panic" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (msg) = args
+        if (msg !is StringValue) {
+            expectedType(line, msg, stringZero)
+        }
+        throw UserPanicExcpetion(line, "[panic] ${msg.value}")
+    },
+
+    // string functions
+    "charList" to { line, args ->
         argumentsCheck(line, args, 1)
         val (string) = args
         if (string !is StringValue) {
@@ -241,6 +256,8 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             StringValue(builder.toString())
         }
     },
+
+    // number conversions
     "int" to { line, args ->
         argumentsCheck(line, args, 1)
         val (arg) = args
@@ -275,6 +292,8 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             else -> expectedOneOfThreeTypes(line, arg, intZero, floatZero, stringZero)
         }
     },
+
+    // collections (general)
     "get" to { line, args ->
         argumentsCheck(line, args, 2)
         val (collection, key) = args
@@ -322,6 +341,19 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
         Nil
     },
+    "size" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (collection) = args
+        when (collection) {
+            is ListValue -> {
+                IntValue(collection.value.size)
+            }
+            is DictValue -> {
+                IntValue(collection.value.size)
+            }
+            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
+        }
+    },
     "in" to { line, args ->
         argumentsCheck(line, args, 2)
         val (collection, key) = args
@@ -346,7 +378,27 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             }
         )
     },
-    "append" to { line, args ->
+    "remove" to { line, args ->
+        argumentsCheck(line, args, 2)
+        val (collection, value) = args
+        when (collection) {
+            is ListValue -> {
+                val list = collection.value
+                BoolValue.of(list.remove(value))
+            }
+            is DictValue -> {
+                val dict = collection.value
+                BoolValue.of(dict.remove(value) == null)
+            }
+            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
+        }
+    },
+
+    // lists
+    "list" to { _, args ->
+        ListValue(args.toMutableList())
+    },
+    "push" to { line, args ->
         argumentsCheck(line, args, 2)
         val (list, newValue) = args
         if (list !is ListValue) {
@@ -355,9 +407,21 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         list.value.add(newValue)
         Nil
     },
-    "list" to { _, args ->
-        ListValue(args.toMutableList())
+    "pop" to { line, args ->
+        argumentsCheck(line, args, 2)
+        val (list) = args
+        if (list !is ListValue) {
+            expectedType(line, list, listZero)
+        }
+        val l = list.value
+        if (l.isEmpty()) {
+            Nil
+        } else {
+            l.removeAt(l.lastIndex)
+        }
     },
+
+    // dicts
     "dict" to { line, args ->
         if (args.size % 2 != 0) {
             throw WrongArgumentException(line, "function \"dict\" requires an even number of arguments")
@@ -368,6 +432,8 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
         DictValue(dict)
     },
+
+    // ranges
     "range" to { line, args ->
         if (args.size > 3) {
             throw WrongNumberOfArgumentsException(line, 3, args.size)
@@ -388,7 +454,7 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
         RangeValue(start.value, end.value, step.value)
     },
-    "rangeprops" to { line, args ->
+    "rangeProps" to { line, args ->
         argumentsCheck(line, args, 1)
         val (range) = args
         if (range !is RangeValue) {
@@ -402,31 +468,12 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             )
         )
     },
-    "size" to { line, args ->
-        argumentsCheck(line, args, 1)
-        val (collection) = args
-        when (collection) {
-            is ListValue -> {
-                IntValue(collection.value.size)
-            }
-            is DictValue -> {
-                IntValue(collection.value.size)
-            }
-            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
-        }
-    },
+
+    // meta programming
     "type" to { line, args ->
         argumentsCheck(line, args, 1)
         val (value) = args
         StringValue(valueTypeName(value))
-    },
-    "panic" to { line, args ->
-        argumentsCheck(line, args, 1)
-        val (msg) = args
-        if (msg !is StringValue) {
-            expectedType(line, msg, stringZero)
-        }
-        throw UserPanicExcpetion(line, "[panic] ${msg.value}")
     }
 )
 
