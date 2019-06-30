@@ -95,6 +95,56 @@ function concatLists lists
     return newList
 end
 
+const sortBy (func []
+    function _swap [list i j]
+        const temp (get list i)
+        (set list i (get list j))
+        (set list j temp)
+    end
+    function _sortBy [list fn left right]
+        if (>= left right)
+            exit
+        end
+
+        (_swap list left (intdiv (+ left right) 2))
+        varas last left
+
+        for var i (range (inc left) right)
+            if (< (fn (get list i)) (fn (get list left)))
+                as last (inc last)
+                (_swap list last i)
+            end
+        end
+        (_swap list left last)
+        (_sortBy list fn left (dec last))
+        (_sortBy list fn (inc last) right)
+    end
+
+    return \[list fn] (_sortBy list fn 0 (dec (size list)))
+end)
+
+function sort list
+    (sortBy list \x x)
+end
+
+
+# dicts
+function dictKeys dict
+    const keys (list)
+    for var key dict
+        (push keys key)
+    end
+    return keys
+end
+
+function dictValues dict
+    const keys (list)
+    for var key dict
+        (push keys (get dict key))
+    end
+    return keys
+end
+
 
 # ranges
 function rangeToList r
