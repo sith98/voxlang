@@ -216,6 +216,22 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         println()
         Nil
     },
+    "read" to { line, args ->
+        argumentsCheck(line, args, 0)
+        readLine()?.let { StringValue(it) } ?: Nil
+    },
+    "charlist" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (string) = args
+        if (string !is StringValue) {
+            expectedType(line, string, stringZero)
+        }
+        val chars = string.value
+            .toCharArray()
+            .map { StringValue(it.toString()) as Value }
+            .toMutableList()
+        ListValue(chars)
+    },
     "concat" to { line, args ->
         variadicFunction(line, args) { _, list ->
             val builder = StringBuilder()
@@ -372,6 +388,20 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         }
         RangeValue(start.value, end.value, step.value)
     },
+    "rangeprops" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (range) = args
+        if (range !is RangeValue) {
+            expectedType(line, range, rangeZero)
+        }
+        ListValue(
+            mutableListOf(
+                IntValue(range.start),
+                IntValue(range.end),
+                IntValue(range.step)
+            )
+        )
+    },
     "size" to { line, args ->
         argumentsCheck(line, args, 1)
         val (collection) = args
@@ -389,6 +419,14 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         argumentsCheck(line, args, 1)
         val (value) = args
         StringValue(valueTypeName(value))
+    },
+    "panic" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (msg) = args
+        if (msg !is StringValue) {
+            expectedType(line, msg, stringZero)
+        }
+        throw UserPanicExcpetion(line, "[panic] ${msg.value}")
     }
 )
 
