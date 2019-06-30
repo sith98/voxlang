@@ -24,6 +24,11 @@ function geq [a b]
     return (not (lt a b))
 
 
+# conversions
+function string x
+    return (concat "" x)
+
+
 # operator aliases
 const + add
 const - sub

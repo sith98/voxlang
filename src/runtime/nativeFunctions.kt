@@ -1,7 +1,5 @@
 package runtime
 
-import parsing.Identifier
-
 typealias NativeFunction = (line: Int, List<Value>) -> Value
 
 val nativeFunctions = mapOf<String, NativeFunction>(
@@ -153,7 +151,65 @@ val nativeFunctions = mapOf<String, NativeFunction>(
             }
         )
     },
-    "print" to { line, args ->
+    "min" to { l, a ->
+        variadicFunction(l, a) { line, args ->
+            var sawFloat = false
+            var smallestNumber = Double.POSITIVE_INFINITY
+            for (arg in args) {
+                when (arg) {
+                    is IntValue -> {
+                        if (arg.value < smallestNumber) {
+                            smallestNumber = arg.value.toDouble()
+                        }
+                    }
+                    is FloatValue -> {
+                        sawFloat = true
+                        if (arg.value < smallestNumber) {
+                            smallestNumber = arg.value
+                        }
+                    }
+                    else -> {
+                        expectedOneOfTwoTypes(line, arg, intZero, floatZero)
+                    }
+                }
+            }
+            if (sawFloat) {
+                FloatValue(smallestNumber)
+            } else {
+                IntValue.of(smallestNumber.toInt())
+            }
+        }
+    },
+    "max" to { l, a ->
+        variadicFunction(l, a) { line, args ->
+            var sawFloat = false
+            var greatestNumber = Double.NEGATIVE_INFINITY
+            for (arg in args) {
+                when (arg) {
+                    is IntValue -> {
+                        if (arg.value > greatestNumber) {
+                            greatestNumber = arg.value.toDouble()
+                        }
+                    }
+                    is FloatValue -> {
+                        sawFloat = true
+                        if (arg.value > greatestNumber) {
+                            greatestNumber = arg.value
+                        }
+                    }
+                    else -> {
+                        expectedOneOfTwoTypes(line, arg, intZero, floatZero)
+                    }
+                }
+            }
+            if (sawFloat) {
+                FloatValue(greatestNumber)
+            } else {
+                IntValue.of(greatestNumber.toInt())
+            }
+        }
+    },
+    "print" to { _, args ->
         for (arg in args) {
             print(valueToString(arg))
         }
@@ -167,6 +223,40 @@ val nativeFunctions = mapOf<String, NativeFunction>(
                 builder.append(valueToString(item))
             }
             StringValue(builder.toString())
+        }
+    },
+    "int" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (arg) = args
+        when (arg) {
+            is IntValue -> arg
+            is FloatValue -> IntValue.of(arg.value.toInt())
+            is StringValue -> {
+                val int = arg.value.toIntOrNull()
+                if (int == null) {
+                    Nil
+                } else {
+                    IntValue.of(int)
+                }
+            }
+            else -> expectedOneOfThreeTypes(line, arg, intZero, floatZero, stringZero)
+        }
+    },
+    "float" to { line, args ->
+        argumentsCheck(line, args, 1)
+        val (arg) = args
+        when (arg) {
+            is IntValue -> FloatValue(arg.value.toDouble())
+            is FloatValue -> arg
+            is StringValue -> {
+                val double = arg.value.toDoubleOrNull()
+                if (double == null) {
+                    Nil
+                } else {
+                    FloatValue(double)
+                }
+            }
+            else -> expectedOneOfThreeTypes(line, arg, intZero, floatZero, stringZero)
         }
     },
     "get" to { line, args ->
@@ -249,7 +339,7 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         list.value.add(newValue)
         Nil
     },
-    "list" to { line, args ->
+    "list" to { _, args ->
         ListValue(args.toMutableList())
     },
     "dict" to { line, args ->
@@ -319,10 +409,4 @@ fun variadicFunction(line: Int, args: List<Value>, fn: NativeFunction): Value {
 
 enum class SpecialFunction(val identifier: String) {
     AND("and"), OR("or");
-
-    companion object {
-        fun byIdentifier(identifier: String): SpecialFunction? {
-            return values().find { it.identifier == identifier }
-        }
-    }
 }
