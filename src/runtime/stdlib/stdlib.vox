@@ -163,6 +163,10 @@ function rangeToList r
     return l
 end
 
+function indexes l
+    return (range 0 (size l))
+end
+
 
 # operator aliases
 const + add

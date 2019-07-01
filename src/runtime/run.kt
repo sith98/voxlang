@@ -133,7 +133,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                 else -> {
                     throw ForLoopException(
                         line,
-                        "Can only iterate over value of type ${valueTypeName(listZero)} or ${valueTypeName(dictZero)}, found ${valueTypeName(iterable)}"
+                        "Can only iterate over value of type ${valueTypeName(listZero)}, ${valueTypeName(dictZero)} or ${valueTypeName(rangeZero)}, found ${valueTypeName(iterable)}"
                     )
                 }
             }
