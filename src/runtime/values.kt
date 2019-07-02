@@ -114,8 +114,12 @@ private fun valueToString(value: Value, builder: StringBuilder) {
     }
 }
 
-fun isTruthy(value: Value): Boolean {
-    return value != Nil && value != boolFalse
+fun isTruthy(value: Value, line: Int): Boolean {
+    if (value is BoolValue) {
+        return value.value
+    } else {
+        expectedType(line, value, boolZero)
+    }
 }
 
 fun valueToString(value: Value): String {

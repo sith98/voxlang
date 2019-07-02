@@ -95,7 +95,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
         }
         is IfElse -> {
             val (condition, thenBody, elseBody) = statement
-            val isTrue = isTruthy(evaluateExpression(line, condition, scope, context))
+            val isTrue = isTruthy(evaluateExpression(line, condition, scope, context), line)
             if (isTrue) {
                 return runBlock(line, thenBody, scope, context)
             } else if (elseBody != null) {
@@ -105,7 +105,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
         }
         is While -> {
             val (condition, body) = statement
-            loop@while (isTruthy(evaluateExpression(line, condition, scope, context))) {
+            loop@while (isTruthy(evaluateExpression(line, condition, scope, context), line)) {
                 val continueExecution = runBlock(line, body, scope, context)
                 when (continueExecution) {
                     is Return -> return continueExecution
@@ -225,7 +225,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
             when (value.specialFunction) {
                 SpecialFunction.AND -> {
                     for (arg in args) {
-                        if (!isTruthy(evaluateExpression(line, arg, scope, context))) {
+                        if (!isTruthy(evaluateExpression(line, arg, scope, context), line)) {
                             return BoolValue.of(false)
                         }
                     }
@@ -233,7 +233,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                 }
                 SpecialFunction.OR -> {
                     for (arg in args) {
-                        if (isTruthy(evaluateExpression(line, arg, scope, context))) {
+                        if (isTruthy(evaluateExpression(line, arg, scope, context), line)) {
                             return BoolValue.of(true)
                         }
                     }
@@ -244,7 +244,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                         throw WrongNumberOfArgumentsException(line, 3, args.size)
                     }
                     val (condition, ifTrue, ifFalse) = args
-                    return if (isTruthy(evaluateExpression(line, condition, scope, context))) {
+                    return if (isTruthy(evaluateExpression(line, condition, scope, context), line)) {
                         evaluateExpression(line, ifTrue, scope, context)
                     } else {
                         evaluateExpression(line, ifFalse, scope, context)
@@ -268,8 +268,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                 functionScope.setValue(argName, evaluateExpression(line, arg, scope, context))
             }
             return try {
-                val continuation = runBlock(line, body, functionScope, context, newScope = false)
-                when (continuation) {
+                when (val continuation = runBlock(line, body, functionScope, context, newScope = false)) {
                     is Return -> continuation.returnValue
                     NormalContinuation -> Nil
                     is Break -> throw IllegalStatementException(continuation.line, "break is only allowed in loops")
