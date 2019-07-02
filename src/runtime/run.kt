@@ -1,7 +1,6 @@
 package runtime
 
 import parsing.*
-import javax.swing.text.AbstractDocument
 
 data class RunningContext(val isStandardLibrary: Boolean)
 
@@ -106,8 +105,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
         is While -> {
             val (condition, body) = statement
             loop@while (isTruthy(evaluateExpression(line, condition, scope, context), line)) {
-                val continueExecution = runBlock(line, body, scope, context)
-                when (continueExecution) {
+                when (val continueExecution = runBlock(line, body, scope, context)) {
                     is Return -> return continueExecution
                     is Continue, NormalContinuation -> { /* simply continue execution */ }
                     is Break -> break@loop
@@ -120,56 +118,32 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
             if (!scope.isVariableDefined(identifier)) {
                 throw ForLoopException(line, "For loop variable $identifier has to be defined beforehand.")
             }
-            when (val iterable = evaluateExpression(line, iterableExpr, scope, context)) {
+            val iterable: Iterable<Value> = when (val iterableValue = evaluateExpression(line, iterableExpr, scope, context)) {
                 is ListValue -> {
-                    val list = iterable.value
-                    loop@for (element in list) {
-                        scope.setValue(identifier, element)
-                        val continueExecution = runBlock(line, body, scope, context)
-                        when (continueExecution) {
-                            is Return -> return continueExecution
-                            is Continue, NormalContinuation -> { /* simply continue execution */ }
-                            is Break -> break@loop
-                        }
-                    }
-                    NormalContinuation
+                    iterableValue.value
                 }
                 is DictValue -> {
-                    val dict = iterable.value
-                    loop@for (key in dict.keys) {
-                        scope.setValue(identifier, key)
-                        val continueExecution = runBlock(line, body, scope, context)
-                        when (continueExecution) {
-                            is Return -> return continueExecution
-                            is Continue, NormalContinuation -> { /* simply continue execution */ }
-                            is Break -> break@loop
-                        }
-                    }
-                    NormalContinuation
+                    iterableValue.value.keys
                 }
                 is RangeValue -> {
-                    val (start, end, step) = iterable
-                    var i = start
-
-                    loop@while (step > 0 && i <= end || step < 0 && i >= end) {
-                        scope.setValue(identifier, IntValue.of(i))
-                        val continueExecution = runBlock(line, body, scope, context)
-                        when (continueExecution) {
-                            is Return -> return continueExecution
-                            is Continue, NormalContinuation -> { /* simply continue execution */ }
-                            is Break -> break@loop
-                        }
-                        i += step
-                    }
-                    NormalContinuation
+                    rangeToIterable(iterableValue)
                 }
                 else -> {
                     throw ForLoopException(
                         line,
-                        "Can only iterate over value of type ${valueTypeName(listZero)}, ${valueTypeName(dictZero)} or ${valueTypeName(rangeZero)}, found ${valueTypeName(iterable)}"
+                        "Can only iterate over value of type ${valueTypeName(listZero)}, ${valueTypeName(dictZero)} or ${valueTypeName(rangeZero)}, found ${valueTypeName(iterableValue)}"
                     )
                 }
             }
+            loop@for (element in iterable) {
+                scope.setValue(identifier, element)
+                when (val continueExecution = runBlock(line, body, scope, context)) {
+                    is Return -> return continueExecution
+                    is Continue, NormalContinuation -> { /* simply continue execution */ }
+                    is Break -> break@loop
+                }
+            }
+            NormalContinuation
         }
         is ReturnStatement -> {
             val returnValue = evaluateExpression(line, statement.expression, scope, context)

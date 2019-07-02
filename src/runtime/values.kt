@@ -122,6 +122,14 @@ fun isTruthy(value: Value, line: Int): Boolean {
     }
 }
 
+fun rangeToIterable(range: RangeValue) = object : Iterable<IntValue> {
+    override fun iterator() = object : Iterator<IntValue> {
+        var i = range.start
+        override fun hasNext() = range.step > 0 && i <= range.end || range.step < 0 && i >= range.end
+        override fun next() = IntValue.of(i).also { i += range.step }
+    }
+}
+
 fun valueToString(value: Value): String {
     val builder = StringBuilder()
     valueToString(value, builder)
