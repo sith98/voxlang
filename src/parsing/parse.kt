@@ -41,10 +41,10 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                 }
                 KeywordE.RETURN -> {
                     val (expr) = parseExpression(tokens)
-                    Return(expr)
+                    ReturnStatement(expr)
                 }
                 KeywordE.EXIT -> {
-                    Return(NilExpression)
+                    ReturnStatement(NilExpression)
                 }
                 KeywordE.DO -> {
                     parseBlock(tokens)
@@ -168,7 +168,7 @@ fun parseExpression(tokens: TokenStream): WithLine<Expression> {
                 SymbolE.LAMBDA -> {
                     val args = parseIdentifierList(tokens)
                     val (body) = parseExpression(tokens)
-                    FunctionDefinition(args, Block(listOf(Return(body) withLine line)))
+                    FunctionDefinition(args, Block(listOf(ReturnStatement(body) withLine line)))
                 }
                 else -> throw ParsingException(line, "Unexpected symbol ${token.symbol.symbol}")
             }

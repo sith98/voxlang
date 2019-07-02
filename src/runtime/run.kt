@@ -1,8 +1,15 @@
 package runtime
 
 import parsing.*
+import javax.swing.text.AbstractDocument
 
 data class RunningContext(val isStandardLibrary: Boolean)
+
+sealed class Continuation
+object NormalContinuation : Continuation()
+class Break(val line: Int) : Continuation()
+class Continue(val line: Int) : Continuation()
+class Return(val line: Int, val returnValue: Value) : Continuation()
 
 fun loadSpecialAndNativeFunctionsIntoScope(scope: Scope) {
     for (fn in SpecialFunction.values()) {
@@ -28,12 +35,17 @@ fun runAst(statements: List<WithLine<Statement>>) {
     loadStdLibIntoScope(scope)
     val context = RunningContext(isStandardLibrary = false)
     for ((statement, line) in statements) {
-        runStatement(line, statement, scope, context)
+        when (val continuation = runStatement(line, statement, scope, context)) {
+            NormalContinuation -> { /* expected behavior */ }
+            is Return -> throw IllegalStatementException(continuation.line, "return is only allowed inside functions")
+            is Continue -> throw IllegalStatementException(continuation.line, "continue is only allowed in loops")
+            is Break -> throw IllegalStatementException(continuation.line, "break is only allowed in loops")
+        }
     }
 }
 
 // returns whether to continue execution in current function scope
-fun runStatement(line: Int, statement: Statement, scope: Scope, context: RunningContext): Boolean {
+fun runStatement(line: Int, statement: Statement, scope: Scope, context: RunningContext): Continuation {
     return when (statement) {
         is Definition -> {
             val (names) = statement
@@ -43,7 +55,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                 }
                 scope.defineVariable(name)
             }
-            true
+            NormalContinuation
         }
         is Assignment -> {
             val (name, expression) = statement
@@ -54,7 +66,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                 throw VariableException(line, "Cannot assign to constant $name")
             }
             scope.setValue(name, evaluateExpression(line, expression, scope, context))
-            true
+            NormalContinuation
         }
         is ConstantDefinition -> {
             val (name, expression) = statement
@@ -63,11 +75,11 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                 throw VariableException(line, "Cannot define variable $name because it already exists.")
             }
             scope.defineConstant(name, evaluateExpression(line, expression, scope, context))
-            true
+            NormalContinuation
         }
         is FunctionCall -> {
             evaluateFunctionExpression(line, statement.function, scope, context)
-            true
+            NormalContinuation
         }
         is Block -> {
             runBlock(line, statement, scope, context)
@@ -80,17 +92,17 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
             } else if (elseBody != null) {
                 return runBlock(line, elseBody, scope, context)
             }
-            true
+            NormalContinuation
         }
         is While -> {
             val (condition, body) = statement
             while (isTruthy(evaluateExpression(line, condition, scope, context))) {
                 val continueExecution = runBlock(line, body, scope, context)
-                if (!continueExecution) {
-                    return false
+                if (continueExecution != NormalContinuation) {
+                    return continueExecution
                 }
             }
-            true
+            NormalContinuation
         }
         is For -> {
             val (identifier, iterableExpr, body) = statement
@@ -103,22 +115,22 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                     for (element in list) {
                         scope.setValue(identifier, element)
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (!continueExecution) {
-                            return false
+                        if (continueExecution != NormalContinuation) {
+                            return continueExecution
                         }
                     }
-                    true
+                    NormalContinuation
                 }
                 is DictValue -> {
                     val dict = iterable.value
                     for (key in dict.keys) {
                         scope.setValue(identifier, key)
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (!continueExecution) {
-                            return false
+                        if (continueExecution != NormalContinuation) {
+                            return continueExecution
                         }
                     }
-                    true
+                    NormalContinuation
                 }
                 is RangeValue -> {
                     val (start, end, step) = iterable
@@ -127,12 +139,12 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                     while (step > 0 && i <= end || step < 0 && i >= end) {
                         scope.setValue(identifier, IntValue.of(i))
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (!continueExecution) {
-                            return false
+                        if (continueExecution != NormalContinuation) {
+                            return continueExecution
                         }
                         i += step
                     }
-                    true
+                    NormalContinuation
                 }
                 else -> {
                     throw ForLoopException(
@@ -142,30 +154,23 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                 }
             }
         }
-        is Return -> {
-            var functionScope = scope
-            while (!functionScope.isFunctionScope) {
-                functionScope = functionScope.parentScope ?: throw IllegalStatementException(
-                    line,
-                    "\"return\" statement is only allowed in functions."
-                )
-            }
-            functionScope.returnValue = evaluateExpression(line, statement.expression, scope, context)
-            false
+        is ReturnStatement -> {
+            val returnValue = evaluateExpression(line, statement.expression, scope, context)
+            Return(line, returnValue)
         }
         is GroupedStatement -> {
             for (subStatement in statement.statements) {
                 val continueExecution = runStatement(line, subStatement, scope, context)
-                if (!continueExecution) {
-                    return false
+                if (continueExecution != NormalContinuation) {
+                    return continueExecution
                 }
             }
-            true
+            NormalContinuation
         }
     }
 }
 
-private fun runBlock(line: Int, block: Block, scope: Scope, context: RunningContext, newScope: Boolean = true): Boolean {
+private fun runBlock(line: Int, block: Block, scope: Scope, context: RunningContext, newScope: Boolean = true): Continuation {
     val blockScope = if (newScope) {
         Scope(label = "Block@$line", parentScope = scope)
     } else {
@@ -173,11 +178,11 @@ private fun runBlock(line: Int, block: Block, scope: Scope, context: RunningCont
     }
     for ((subStatement, subLine) in block.statements) {
         val continueExecution = runStatement(subLine, subStatement, blockScope, context)
-        if (!continueExecution) {
-            return false
+        if (continueExecution != NormalContinuation) {
+            return continueExecution
         }
     }
-    return true
+    return NormalContinuation
 }
 
 fun evaluateExpression(line: Int, expression: Expression, scope: Scope, context: RunningContext): Value {
@@ -248,15 +253,20 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                 functionScope.defineVariable(argName)
                 functionScope.setValue(argName, evaluateExpression(line, arg, scope, context))
             }
-            try {
-                runBlock(line, body, functionScope, context, newScope = false)
+            return try {
+                val continuation = runBlock(line, body, functionScope, context, newScope = false)
+                when (continuation) {
+                    is Return -> continuation.returnValue
+                    NormalContinuation -> Nil
+                    is Break -> throw IllegalStatementException(continuation.line, "break is only allowed in loops")
+                    is Continue -> throw IllegalStatementException(continuation.line, "continuation is only allowed in loops")
+                }
             } catch (e: VoxRuntimeException) {
                 if (isStandardLibrary) {
                     e.line = line
                 }
                 throw e
             }
-            return functionScope.returnValue
         }
         else -> {
             throw FunctionException(line, "\"$function\" is not a function.")

@@ -7,17 +7,6 @@ class Scope(val label: String, val parentScope: Scope? = null, val isFunctionSco
     private val scope = mutableMapOf<String, Value>()
     private val constants = mutableSetOf<String>()
 
-    var returnValue: Value = Nil
-    var continueExecution = true
-        private set
-
-    fun terminateFunction() {
-        continueExecution = false
-        if (!isFunctionScope) {
-            parentScope?.terminateFunction()
-        }
-    }
-
     fun isVariableDefinedInThisScope(identifier: String): Boolean {
         return identifier in scope
     }
