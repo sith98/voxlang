@@ -7,6 +7,8 @@ enum class KeywordE(val word: String) {
     AS("as"),
     RETURN("return"),
     EXIT("exit"),
+    BREAK("break"),
+    CONTINUE("continue"),
     DO("do"),
     END("end"),
     IF("if"),

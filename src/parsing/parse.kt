@@ -85,6 +85,12 @@ fun parseStatement(tokens: TokenStream): WithLine<Statement> {
                     val functionDefinition = parseFunctionDefinition(tokens)
                     ConstantDefinition(name.name, functionDefinition)
                 }
+                KeywordE.CONTINUE -> {
+                    ContinueStatement
+                }
+                KeywordE.BREAK -> {
+                    BreakStatement
+                }
                 else -> throw ParsingException(line, "Unexpected keyword ${token.keyword.word}")
             }
         }

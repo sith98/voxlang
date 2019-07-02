@@ -81,6 +81,15 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
             evaluateFunctionExpression(line, statement.function, scope, context)
             NormalContinuation
         }
+        is GroupedStatement -> {
+            for (subStatement in statement.statements) {
+                val continueExecution = runStatement(line, subStatement, scope, context)
+                if (continueExecution != NormalContinuation) {
+                    return continueExecution
+                }
+            }
+            NormalContinuation
+        }
         is Block -> {
             runBlock(line, statement, scope, context)
         }
@@ -96,10 +105,12 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
         }
         is While -> {
             val (condition, body) = statement
-            while (isTruthy(evaluateExpression(line, condition, scope, context))) {
+            loop@while (isTruthy(evaluateExpression(line, condition, scope, context))) {
                 val continueExecution = runBlock(line, body, scope, context)
-                if (continueExecution != NormalContinuation) {
-                    return continueExecution
+                when (continueExecution) {
+                    is Return -> return continueExecution
+                    is Continue, NormalContinuation -> { /* simply continue execution */ }
+                    is Break -> break@loop
                 }
             }
             NormalContinuation
@@ -112,22 +123,26 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
             when (val iterable = evaluateExpression(line, iterableExpr, scope, context)) {
                 is ListValue -> {
                     val list = iterable.value
-                    for (element in list) {
+                    loop@for (element in list) {
                         scope.setValue(identifier, element)
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (continueExecution != NormalContinuation) {
-                            return continueExecution
+                        when (continueExecution) {
+                            is Return -> return continueExecution
+                            is Continue, NormalContinuation -> { /* simply continue execution */ }
+                            is Break -> break@loop
                         }
                     }
                     NormalContinuation
                 }
                 is DictValue -> {
                     val dict = iterable.value
-                    for (key in dict.keys) {
+                    loop@for (key in dict.keys) {
                         scope.setValue(identifier, key)
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (continueExecution != NormalContinuation) {
-                            return continueExecution
+                        when (continueExecution) {
+                            is Return -> return continueExecution
+                            is Continue, NormalContinuation -> { /* simply continue execution */ }
+                            is Break -> break@loop
                         }
                     }
                     NormalContinuation
@@ -136,11 +151,13 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
                     val (start, end, step) = iterable
                     var i = start
 
-                    while (step > 0 && i <= end || step < 0 && i >= end) {
+                    loop@while (step > 0 && i <= end || step < 0 && i >= end) {
                         scope.setValue(identifier, IntValue.of(i))
                         val continueExecution = runBlock(line, body, scope, context)
-                        if (continueExecution != NormalContinuation) {
-                            return continueExecution
+                        when (continueExecution) {
+                            is Return -> return continueExecution
+                            is Continue, NormalContinuation -> { /* simply continue execution */ }
+                            is Break -> break@loop
                         }
                         i += step
                     }
@@ -158,14 +175,11 @@ fun runStatement(line: Int, statement: Statement, scope: Scope, context: Running
             val returnValue = evaluateExpression(line, statement.expression, scope, context)
             Return(line, returnValue)
         }
-        is GroupedStatement -> {
-            for (subStatement in statement.statements) {
-                val continueExecution = runStatement(line, subStatement, scope, context)
-                if (continueExecution != NormalContinuation) {
-                    return continueExecution
-                }
-            }
-            NormalContinuation
+        BreakStatement -> {
+            Break(line)
+        }
+        ContinueStatement -> {
+            Continue(line)
         }
     }
 }
