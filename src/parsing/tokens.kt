@@ -52,9 +52,9 @@ val keywordMap = run {
     map
 }
 
-val paranMap = symbolMap.filterValues { it.isParen }
-val identStart: Set<Char> = ('a' .. 'z').union('A' .. 'Z') + "_-+*/%><&|'!?$=~".toSet()
-val identMiddle = identStart.union('0' .. '9')
+val parenMap = symbolMap.filterValues { it.isParen }
+val identifierStart: Set<Char> = ('a' .. 'z').union('A' .. 'Z') + "_-+*/%><&|'!?$=~".toSet()
+val identifierMiddle = identifierStart.union('0' .. '9')
 private val digit = ('0' .. '9').toSet()
 val numStart = digit.union(setOf('-', '+'))
 val numMiddle = numStart.union(setOf('.'))
@@ -65,7 +65,9 @@ val stringEscape = setOf('\\')
 val escapeSequences = mapOf(
     '\\' to '\\',
     '"' to '"',
-    'n' to '\n'
+    'n' to '\n',
+    'r' to '\r',
+    't' to '\t'
 )
 val allowedSymbolCharacters = SymbolE.values().flatMap { it.symbol.asIterable() }.toSet()
 
