@@ -1,6 +1,9 @@
 package runtime
 
-abstract class VoxRuntimeException(line: Int, cause: String) : Exception("Runtime Exception in line $line: $cause")
+abstract class VoxRuntimeException(var line: Int, val errorMessage: String) : Exception() {
+    override val message: String?
+        get() = "Runtime Exception in line $line: $errorMessage"
+}
 
 class VariableException(line: Int, cause: String) : VoxRuntimeException(line, cause)
 class FunctionException(line: Int, cause: String) : VoxRuntimeException(line, cause)

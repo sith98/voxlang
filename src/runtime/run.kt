@@ -2,6 +2,8 @@ package runtime
 
 import parsing.*
 
+data class RunningContext(val isStandardLibrary: Boolean)
+
 fun loadSpecialAndNativeFunctionsIntoScope(scope: Scope) {
     for (fn in SpecialFunction.values()) {
         scope.defineConstant(fn.identifier, SpecialFunctionValue(fn))
@@ -14,8 +16,9 @@ fun loadSpecialAndNativeFunctionsIntoScope(scope: Scope) {
 fun loadStdLibIntoScope(scope: Scope) {
     val source = object {}.javaClass.getResource("/runtime/stdlib/stdlib.vox").readText()
     val stdLib = parse(TokenStream(tokenize(source)))
+    val context = RunningContext(isStandardLibrary = true)
     for ((statement, line) in stdLib) {
-        runStatement(line, statement, scope)
+        runStatement(line, statement, scope, context)
     }
 }
 
@@ -23,13 +26,14 @@ fun runAst(statements: List<WithLine<Statement>>) {
     val scope = Scope("Global")
     loadSpecialAndNativeFunctionsIntoScope(scope)
     loadStdLibIntoScope(scope)
+    val context = RunningContext(isStandardLibrary = false)
     for ((statement, line) in statements) {
-        runStatement(line, statement, scope)
+        runStatement(line, statement, scope, context)
     }
 }
 
 // returns whether to continue execution in current function scope
-fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
+fun runStatement(line: Int, statement: Statement, scope: Scope, context: RunningContext): Boolean {
     return when (statement) {
         is Definition -> {
             val (names) = statement
@@ -49,7 +53,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
             if (scope.isConstant(name)) {
                 throw VariableException(line, "Cannot assign to constant $name")
             }
-            scope.setValue(name, evaluateExpression(line, expression, scope))
+            scope.setValue(name, evaluateExpression(line, expression, scope, context))
             true
         }
         is ConstantDefinition -> {
@@ -58,30 +62,30 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
             if (scope.isVariableDefinedInThisScope(name)) {
                 throw VariableException(line, "Cannot define variable $name because it already exists.")
             }
-            scope.defineConstant(name, evaluateExpression(line, expression, scope))
+            scope.defineConstant(name, evaluateExpression(line, expression, scope, context))
             true
         }
         is FunctionCall -> {
-            evaluateFunctionExpression(line, statement.function, scope)
+            evaluateFunctionExpression(line, statement.function, scope, context)
             true
         }
         is Block -> {
-            runBlock(line, statement, scope)
+            runBlock(line, statement, scope, context)
         }
         is IfElse -> {
             val (condition, thenBody, elseBody) = statement
-            val isTrue = isTruthy(evaluateExpression(line, condition, scope))
+            val isTrue = isTruthy(evaluateExpression(line, condition, scope, context))
             if (isTrue) {
-                return runBlock(line, thenBody, scope)
+                return runBlock(line, thenBody, scope, context)
             } else if (elseBody != null) {
-                return runBlock(line, elseBody, scope)
+                return runBlock(line, elseBody, scope, context)
             }
             true
         }
         is While -> {
             val (condition, body) = statement
-            while (isTruthy(evaluateExpression(line, condition, scope))) {
-                val continueExecution = runBlock(line, body, scope)
+            while (isTruthy(evaluateExpression(line, condition, scope, context))) {
+                val continueExecution = runBlock(line, body, scope, context)
                 if (!continueExecution) {
                     return false
                 }
@@ -93,12 +97,12 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
             if (!scope.isVariableDefined(identifier)) {
                 throw ForLoopException(line, "For loop variable $identifier has to be defined beforehand.")
             }
-            when (val iterable = evaluateExpression(line, iterableExpr, scope)) {
+            when (val iterable = evaluateExpression(line, iterableExpr, scope, context)) {
                 is ListValue -> {
                     val list = iterable.value
                     for (element in list) {
                         scope.setValue(identifier, element)
-                        val continueExecution = runBlock(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope, context)
                         if (!continueExecution) {
                             return false
                         }
@@ -109,7 +113,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                     val dict = iterable.value
                     for (key in dict.keys) {
                         scope.setValue(identifier, key)
-                        val continueExecution = runBlock(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope, context)
                         if (!continueExecution) {
                             return false
                         }
@@ -122,7 +126,7 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
 
                     while (step > 0 && i <= end || step < 0 && i >= end) {
                         scope.setValue(identifier, IntValue.of(i))
-                        val continueExecution = runBlock(line, body, scope)
+                        val continueExecution = runBlock(line, body, scope, context)
                         if (!continueExecution) {
                             return false
                         }
@@ -146,12 +150,12 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
                     "\"return\" statement is only allowed in functions."
                 )
             }
-            functionScope.returnValue = evaluateExpression(line, statement.expression, scope)
+            functionScope.returnValue = evaluateExpression(line, statement.expression, scope, context)
             false
         }
         is GroupedStatement -> {
             for (subStatement in statement.statements) {
-                val continueExecution = runStatement(line, subStatement, scope)
+                val continueExecution = runStatement(line, subStatement, scope, context)
                 if (!continueExecution) {
                     return false
                 }
@@ -161,14 +165,14 @@ fun runStatement(line: Int, statement: Statement, scope: Scope): Boolean {
     }
 }
 
-private fun runBlock(line: Int, block: Block, scope: Scope, newScope: Boolean = true): Boolean {
+private fun runBlock(line: Int, block: Block, scope: Scope, context: RunningContext, newScope: Boolean = true): Boolean {
     val blockScope = if (newScope) {
         Scope(label = "Block@$line", parentScope = scope)
     } else {
         scope
     }
     for ((subStatement, subLine) in block.statements) {
-        val continueExecution = runStatement(subLine, subStatement, blockScope)
+        val continueExecution = runStatement(subLine, subStatement, blockScope, context)
         if (!continueExecution) {
             return false
         }
@@ -176,7 +180,7 @@ private fun runBlock(line: Int, block: Block, scope: Scope, newScope: Boolean = 
     return true
 }
 
-fun evaluateExpression(line: Int, expression: Expression, scope: Scope): Value {
+fun evaluateExpression(line: Int, expression: Expression, scope: Scope, context: RunningContext): Value {
     return when (expression) {
         NilExpression -> Nil
         is IntConst -> IntValue.of(expression.value)
@@ -188,21 +192,21 @@ fun evaluateExpression(line: Int, expression: Expression, scope: Scope): Value {
                 line,
                 "Cannot access variable ${expression.name} because it does not exist."
             )
-        is FunctionExpression -> evaluateFunctionExpression(line, expression, scope)
-        is FunctionDefinition -> FunctionValue(expression.args, expression.body, scope)
+        is FunctionExpression -> evaluateFunctionExpression(line, expression, scope, context)
+        is FunctionDefinition -> FunctionValue(expression.args, expression.body, scope, context.isStandardLibrary)
     }
 }
 
 @Suppress("FoldInitializerAndIfToElvis")
-fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope: Scope): Value {
+fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope: Scope, context: RunningContext): Value {
     val (function, args) = expression
 
-    when (val value = evaluateExpression(line, function, scope)) {
+    when (val value = evaluateExpression(line, function, scope, context)) {
         is SpecialFunctionValue -> {
             when (value.specialFunction) {
                 SpecialFunction.AND -> {
                     for (arg in args) {
-                        if (!isTruthy(evaluateExpression(line, arg, scope))) {
+                        if (!isTruthy(evaluateExpression(line, arg, scope, context))) {
                             return BoolValue.of(false)
                         }
                     }
@@ -210,7 +214,7 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                 }
                 SpecialFunction.OR -> {
                     for (arg in args) {
-                        if (isTruthy(evaluateExpression(line, arg, scope))) {
+                        if (isTruthy(evaluateExpression(line, arg, scope, context))) {
                             return BoolValue.of(true)
                         }
                     }
@@ -221,19 +225,19 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
                         throw WrongNumberOfArgumentsException(line, 3, args.size)
                     }
                     val (condition, ifTrue, ifFalse) = args
-                    return if (isTruthy(evaluateExpression(line, condition, scope))) {
-                        evaluateExpression(line, ifTrue, scope)
+                    return if (isTruthy(evaluateExpression(line, condition, scope, context))) {
+                        evaluateExpression(line, ifTrue, scope, context)
                     } else {
-                        evaluateExpression(line, ifFalse, scope)
+                        evaluateExpression(line, ifFalse, scope, context)
                     }
                 }
             }
         }
         is NativeFunctionValue -> {
-            return value.nativeFunction(line, args.map { evaluateExpression(line, it, scope) })
+            return value.nativeFunction(line, args.map { evaluateExpression(line, it, scope, context) })
         }
         is FunctionValue -> {
-            val (parameters, body, outerScope) = value
+            val (parameters, body, outerScope, isStandardLibrary) = value
 
             val functionScope = Scope("Function($function)@$line", parentScope = outerScope, isFunctionScope = true)
             if (parameters.size != args.size) {
@@ -242,9 +246,16 @@ fun evaluateFunctionExpression(line: Int, expression: FunctionExpression, scope:
             args.forEachIndexed { i, arg ->
                 val argName = parameters[i]
                 functionScope.defineVariable(argName)
-                functionScope.setValue(argName, evaluateExpression(line, arg, scope))
+                functionScope.setValue(argName, evaluateExpression(line, arg, scope, context))
             }
-            runBlock(line, body, functionScope, newScope = false)
+            try {
+                runBlock(line, body, functionScope, context, newScope = false)
+            } catch (e: VoxRuntimeException) {
+                if (isStandardLibrary) {
+                    e.line = line
+                }
+                throw e
+            }
             return functionScope.returnValue
         }
         else -> {
