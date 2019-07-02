@@ -1,6 +1,356 @@
 # Vox
 
-Minimalisitc, interpreted programming language with a very regular syntax.
+Minimalistic, interpreted programming language with a very regular syntax.
+
+## Introduction
+
+Vox is a language I created mainly for two purposes.
+First, because creating my own programming language is something I wanted to do for years.
+Certain parts of the language design I decided on specifically, so it would be relatively easy to parse.
+For example the first token in each statement already indicates which kind of statement it is.
+
+The Second reason is that I wanted to create a language mainly intended for educational purposes.
+Its grammar and syntax are very regular (e.g with typically arithmetic operators being function calls).
+With the exception of the function call it makes a strict distinction between statement and expression,
+a distinction important for the understanding of many programming languages.
+In many regards it is very strict (if-statements require boolean values, values of different types are never equal)
+without being overly restrictive (the "concat" function does not require you to convert every value to a string).
+
+I also wanted to include a couple of more sophisticated features that I think are quite important to understand early on when learning how to program.
+This is way Vox supports some typical concepts of functional programming languages like higher-order-functions and closures.
+
+## Language specification
+
+### Data types
+
+Vox supports the following data types:
+
+| Type   | Description                                                             |
+|--------|-------------------------------------------------------------------------|
+| Int    | 32 bit integer                                                          |
+| Float  | 64 bit, double precision                                                |
+| Bool   | either "true" or "false"                                                |
+| String | and immutable string of unicode characters                              |
+| List   | mutable zero-indexed collection                                         |
+| Dict   | hash map with keys of any type                                          |
+| Range  | inclusive integer range                                                 |
+| Func   | function pointer                                                        |
+| Nil    | type with the single instance "nil" that represents the absence of data |
+
+### Grammar
+
+#### Statements
+Vox makes a clear distinction between statements and expressions.
+A Vox program is defined as a list of statements.
+Statements are the parts of the language that get things done and are supposed to have an effect on the rest of the program.
+
+##### Variable declaration
+Declares a variable in the current scope and initializes it with the value `nil`.
+```
+var test
+```
+You can also define multiple variables at once
+```
+var [a b c]
+```
+
+##### Variable Assignment
+Assigns to an already existing variable. Assigning to a variable that doesn't exist causes a runtime error.
+```
+var test
+as test 42
+```
+
+There is a shorthand syntax for declaring and defining a variable in one line.
+```
+varas name "Vox"
+
+# is equivalent to
+var name
+as name "Vox"
+```   
+
+##### Constant definition
+Creates a constant and assigns to it a given value. 
+```
+const PI 3.1415
+```
+
+Constants can not be reassigned.
+```
+as PI 5   # Will throw a runtime error
+```
+
+##### Function definition (statement shorthand)
+```
+function helloWorld []
+    (print "Hello World")
+end
+```
+This statement is equivalent to
+```
+const helloWorld func []
+    (print "Hello World")
+end
+```
+Please look at function definition expressions for more details.
+
+##### Function call
+Calls a function. The first expression inside the pair of parentheses is the actual function.
+The following expressions are its arguments
+```
+(print "Hello World")
+(print "The answer is: " answer)
+(print)
+```
+Function calls are the only language elements that can be both statements and expressions depending on context.
+
+##### Block
+Blocks group a list of statements into a single unit. They are mainly used to create sub-scopes.
+```
+do
+    var test
+    as test (add 1 2)
+    (print test)
+end 
+```
+
+##### If condition
+Execute a block of code only if the condition yields `true`.
+An *else* branch and several *else if* branches are also permitted.  
+```
+if (eq (add 1 2) 3)
+    (print "Hurray")
+end
+
+if this
+    # do something
+elif that
+    # do something else
+else
+    # do something entirely different
+end
+
+if true
+    (print false)
+else
+    (print true)
+end
+```
+If conditions are required to be `Bool`s. Using a value other than a `Bool` causes a runtime exception.
+
+##### While loop
+```
+varas i 0
+while (lt i 10)
+    (print i)
+    as i (inc i)
+end
+```
+While conditions are required to be `Bool`s. Using a value other than a `Bool` causes a runtime exception.
+
+##### For loop
+Values of types `List`, `Dict` and `Range` can be iterated over.
+```
+const l (list 1 2 3 4)
+const d (dict "a" 1 "b" 2 "c" 3)
+const r (range 0 4)
+
+var i
+for i l
+    (print i)   # 1, 2, 3, 4
+end
+
+for i d
+    (print i)   # a, b, c
+end
+
+for i r
+    (print i)   # 0, 1, 2, 3, 4
+end
+```
+You can also declare a variable directly inside a for loop. This variable will only exist for the duration of the loop.
+```
+for var i (range 4 1 -1)
+    (print i)  # 4, 3, 2, 1
+end
+```
+
+##### Return statement
+Returns a value from a function and terminates its execution.
+```
+function test []
+    return 1
+end
+
+(print (test))  # 1
+```
+Return statement require a return value. Omitting this value is not allowed.
+If you just want to exit a function without returning a specific value, use `exit`, which is a shorthand of `return nil`.
+```
+function test []
+    exit
+end
+```
+##### Break and Continue
+`break` allows you to exit from a loop early while `continue` skips the rest of the current iteration.
+```
+for var i (range 1 10)
+    if (eq i 4)
+        continue
+    end
+    if (eq i 8)
+        break
+    end
+    (print i)
+end
+
+# Prints 1, 2, 3, 5, 6, 7
+```
+
+#### Expressions
+Expressions are the parts of Vox that represent values.
+They cannot stand alone but are always a part of statement.
+
+##### Constant Literals
+Literals represent constant values that do not have to be computed.
+```
+# Nil
+nil
+
+# Int
+1
+-42
+
+# Float
+3.5
+-17.74
+
+# Bool
+true
+false
+
+# String
+"Hello World"
+```
+String literals allow the following escape sequences: `\"`, `\\`, `\n`, `\r`, `\t`.
+
+##### Variables
+Variables can temporarily store values that will be used at a later point in the program and are referred to by name.
+Their names are allowed to consist of the following symbols.
+```
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789
+_-+*/%><&|'!?$=~
+```
+There are two exceptions:
+* A variable name cannot start with a digit
+* If a variable starts with `+` or `-`, the second character cannot be a digit.
+
+###### Variable Scopes
+Functions, blocks, if conditions, while loops, and for loops all define their own scopes
+Each variable is only visible in the scope where it was created or in one of its sub-scopes.
+```
+varas a 1
+do
+    varas b 2
+    if true
+        varas c 3
+        # a, b and c are visible here
+    end
+    # a and b are visible here
+end
+# only a is visible here
+```
+Inside functions you have always access to variables in the scope where the function was created, 
+even if the function is called from outside this scope.
+```
+var test
+do
+    varas a 123
+    function f []
+        as a (inc a)
+        (print a)
+    end
+    as test f
+end
+
+(test)   # prints 123
+```
+You can create a variable even if there already exists a variable with the same name in one of the outer scopes.
+If you do that, the inner variable so called "shadows" the outer one.
+Note that these two variables then have nothing to do with each other, except that they happen to have the same name.
+```
+varas test 42
+do
+    # redeclaring a variable test
+    varas test 3
+    (print test)   # prints 3
+end
+(print test)       # prints 42
+```
+
+##### Function definition
+In Vox a function is considered a value like any other.
+This means, it can be assigned to variables, passed to other functions, etc.
+As functions are considered values, a function definition is considered an expression.
+
+A function definition consists of the keyword `func`, followed by a parameter list in brackets, followed by a block of code.
+```
+var test
+as test func [a b]
+    return (add (mul a 2) b)
+end
+```
+
+If a function has exactly one parameter, the brackets can be omitted.
+```
+func x
+    return (mul x 2)
+end
+```
+When calling a function, the given arguments are assigned to variables inside the newly created function scope with the names stated in the parameter list.
+
+###### Closures
+In Vox, function can access and even change the environment, in which they were created.
+A function that does this is called a closure. Some examples:
+```
+function makeCounter []
+    varas n 0
+    function count []
+        as n (inc n)
+        return n
+    end
+    return count
+end
+
+const counter (makeCounter)
+const counter2 (makeCounter)
+
+(print (counter))   # prints 1
+(print (counter2))  # prints 1
+(print (counter))   # prints 2
+(print (counter2))  # prints 2
+
+
+function makeAdder x
+    return func y
+        return (add x y)
+    end
+end
+
+const add2 (makeAdder 2)
+
+(print (add2 5))  # prints 7
+(print (add2 6))  # prints 8
+```
+
+###### Shorthand lambda syntax
+
+
+
+
 <!--
 ## Getting Started
 
