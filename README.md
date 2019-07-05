@@ -68,10 +68,10 @@ varas name "Vox"
 # is equivalent to
 var name
 as name "Vox"
-```   
+```
 
 ##### Constant definition
-Creates a constant and assigns to it a given value. 
+Creates a constant and assigns to it a given value.
 ```
 const PI 3.1415
 ```
@@ -112,12 +112,12 @@ do
     var test
     as test (add 1 2)
     (print test)
-end 
+end
 ```
 
 ##### If condition
 Execute a block of code only if the condition yields `true`.
-An *else* branch and several *else if* branches are also permitted.  
+An *else* branch and several *else if* branches are also permitted.
 ```
 if (eq (add 1 2) 3)
     (print "Hurray")
@@ -265,7 +265,7 @@ do
 end
 # only a is visible here
 ```
-Inside functions you have always access to variables in the scope where the function was created, 
+Inside functions you have always access to variables in the scope where the function was created,
 even if the function is called from outside this scope.
 ```
 var test
@@ -382,6 +382,102 @@ const squares (map l \x (mul x x))
 (print squares)   # [1, 4, 9, 16, 25]
 ```
 
+### Standard library
+
+#### Special functions
+
+Special functions are functions that when called have different semantics (like lazy evaluation of its arguments).
+They can be called, assigned to variables, etc. just like any other function, but internally they are called in a different way.
+
+##### and, or
+They take a variable number of boolean values as arguments and return the logical conjunction/disjunction of these values.
+In other words: `and` returns `true` if all input values are `true`, `or` returns `true` if at least one of its inputs is `true`.
+They both perform lazy evaluation. For example, if the first argument to `or` is true, the rest of its arguments is not even evaluated.
+
+```
+const value (int (read))
+
+# Checks if conversion was successful and divisible by 2.
+if (and (neq value nil) (eq (mod value 2) 0))
+    # do something
+end
+```
+Without lazy evaluation, this check could throw an error if the conversion to int in the first line failed, because "mod" throws an error if one of its arguments is `nil`.
+
+##### choice
+`choice` expects exacty three arguments. It evaluates the first.
+If it yields `true`, it evaluates the second and returns its result.
+Otherwise, it returns the third.
+This can be used as a handy shorthand for a more verbose if condition.
+
+```
+const maybeValue (int (read))
+const value (choice (eq maybeValue nil) 0 maybeValue)
+
+# is equivalent to
+
+const maybeValue (int (read))
+var tempValue
+if (eq maybeValue nil)
+    as tempValue 0
+else
+    as tempValue maybeValue
+end
+const value tempValue
+```
+
+#### Native functions
+Native functions are part of the runtime and written in Kotlin. They could not be have been written just using Vox.
+
+##### Arithmetic
+
+###### add, mul
+Take a variable number of arguments or just one argument that is list of numbers and calculate the sum/product of them.
+If one of the inputs is a `Float`, the result will be a `Float`, otherwise an `Int`.
+
+```
+(add 2 3)               # 5
+(add 2 3 4 5)           # 9
+(mul (list 1 2 3 4 5))  # 10
+```
+Aliases: `+`, `*`
+
+###### sub
+Expects two numbers as inputs and subtracts the second from the first.
+If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
+
+```
+(sub 3 -5)   # 8
+(sub 4.2 1)  # 5.2
+```
+Alias: `-`
+
+###### mod
+Expects two numbers as inputs and returns the remainder of the first number divided by the second.
+If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
+
+```
+(mod 7 3)   # 1
+(mod 7 -3)  # -1
+```
+
+###### div
+Divides two given numbers.
+Unlike other arithmetic functions like `add`, `div` always returns a `Float`.
+```
+(div 2.2 11)  # 0.2
+(div 1 2)     # 0.5
+```
+Alias: `/`
+
+###### intdiv
+Requires two `Ints`.
+Returns the integer quotient of these numbers.
+```
+(intdiv 3 2)   # 1
+(intdiv -3 2)  # -1
+```
+
 
 
 
@@ -453,7 +549,7 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags).
 
 ## Authors
 
