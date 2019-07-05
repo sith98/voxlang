@@ -6,18 +6,18 @@ Minimalistic, interpreted programming language with a very regular syntax.
 
 Vox is a language I created mainly for two purposes.
 First, because creating my own programming language is something I wanted to do for years.
-Certain parts of the language design I decided on specifically, so it would be relatively easy to parse.
+In order to make it not too difficult, I decided on certain parts of the language design specifically, so it would be relatively easy to parse.
 For example the first token in each statement already indicates which kind of statement it is.
 
-The Second reason is that I wanted to create a language mainly intended for educational purposes.
-Its grammar and syntax are very regular (e.g with typically arithmetic operators being function calls).
-With the exception of the function call it makes a strict distinction between statement and expression,
-a distinction important for the understanding of many programming languages.
-In many regards it is very strict (if-statements require boolean values, values of different types are never equal)
+The second reason is that I wanted to create a language mainly intended for educational purposes.
+Its grammar and syntax are very regular (e.g. typical, arithmetic operators are just regular functions).
+The distinction between statements and expressions is essential for the understanding of many programming languages.
+This is why Vox makes a relatively strict distinction between them, with the exception of the function call, which can be both.
+In general, the language is quite strict (if-statements require boolean values, values of different types are never equal to each other)
 without being overly restrictive (the "concat" function does not require you to convert every value to a string).
 
 I also wanted to include a couple of more sophisticated features that I think are quite important to understand early on when learning how to program.
-This is way Vox supports some typical concepts of functional programming languages like higher-order-functions and closures.
+Therefore, Vox supports some typical concepts of functional programming languages like higher-order-functions and closures.
 
 ## Language specification
 
@@ -185,13 +185,15 @@ end
 
 (print (test))  # 1
 ```
-Return statement require a return value. Omitting this value is not allowed.
+Return statements require a return value. Omitting this value is not allowed.
 If you just want to exit a function without returning a specific value, use `exit`, which is a shorthand of `return nil`.
 ```
 function test []
     exit
 end
 ```
+
+
 ##### Break and Continue
 `break` allows you to exit from a loop early while `continue` skips the rest of the current iteration.
 ```
@@ -276,7 +278,7 @@ do
     as test f
 end
 
-(test)   # prints 123
+(test)   # prints 124
 ```
 You can create a variable even if there already exists a variable with the same name in one of the outer scopes.
 If you do that, the inner variable so called "shadows" the outer one.
@@ -291,12 +293,24 @@ end
 (print test)       # prints 42
 ```
 
+##### Function call
+Where other kinds of expressions represent a value directly, a function call is an expression that has to be evaluated first before it results in a value.
+When a function call is used as an expression, the function will get executed and the value returned by the function becomes the value of the expression.
+
+The syntax is identical to function call statements.
+```
+const a (add 1 2)
+const b (div 9 b)
+
+(print (inc b))
+```
+
 ##### Function definition
 In Vox a function is considered a value like any other.
 This means, it can be assigned to variables, passed to other functions, etc.
 As functions are considered values, a function definition is considered an expression.
 
-A function definition consists of the keyword `func`, followed by a parameter list in brackets, followed by a block of code.
+A function definition consists of the keyword `func`, followed by a parameter list in brackets, followed by a block of code, which is also called the function body.
 ```
 var test
 as test func [a b]
@@ -311,6 +325,9 @@ func x
 end
 ```
 When calling a function, the given arguments are assigned to variables inside the newly created function scope with the names stated in the parameter list.
+
+Execution of a function ends when encountering a return/exit statement or when reaching the end of its body.
+In the latter case, the function implicitly returns `nil`.
 
 ###### Closures
 In Vox, function can access and even change the environment, in which they were created.
@@ -347,6 +364,24 @@ const add2 (makeAdder 2)
 ```
 
 ###### Shorthand lambda syntax
+Very short function definitions that have the form `func [args...] return expression end` can be expressed in a more concise manner.
+
+```
+\a (mul a 2)
+# is equivalent to
+func a return (mul a 2) end
+
+\[a b] (add (mul a 2) b)
+# is equivalent to
+func [a b] return (add (mul a 2) b) end
+```
+This is especially useful when these so called "lambda expressions" are passed to another function:
+```
+const l (list 1 2 3 4 5 6)
+const squares (map l \x (mul x x))
+(print squares)   # [1, 4, 9, 16, 25]
+```
+
 
 
 
