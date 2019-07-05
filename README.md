@@ -429,9 +429,7 @@ const value tempValue
 #### Native functions
 Native functions are part of the runtime and written in Kotlin. They could not be have been written just using Vox.
 
-##### Arithmetic
-
-###### add, mul
+##### add, mul
 Take a variable number of arguments or just one argument that is list of numbers and calculate the sum/product of them.
 If one of the inputs is a `Float`, the result will be a `Float`, otherwise an `Int`.
 
@@ -442,7 +440,7 @@ If one of the inputs is a `Float`, the result will be a `Float`, otherwise an `I
 ```
 Aliases: `+`, `*`
 
-###### sub
+##### sub
 Expects two numbers as inputs and subtracts the second from the first.
 If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
 
@@ -452,7 +450,7 @@ If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
 ```
 Alias: `-`
 
-###### mod
+##### mod
 Expects two numbers as inputs and returns the remainder of the first number divided by the second.
 If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
 
@@ -461,7 +459,7 @@ If both inputs ar `Int`s, it returns an `Int`, otherwise a `Float`.
 (mod 7 -3)  # -1
 ```
 
-###### div
+##### div
 Divides two given numbers.
 Unlike other arithmetic functions like `add`, `div` always returns a `Float`.
 ```
@@ -470,17 +468,62 @@ Unlike other arithmetic functions like `add`, `div` always returns a `Float`.
 ```
 Alias: `/`
 
-###### intdiv
-Requires two `Ints`.
+##### intdiv
+Requires two `Int`s.
 Returns the integer quotient of these numbers.
 ```
 (intdiv 3 2)   # 1
 (intdiv -3 2)  # -1
 ```
 
+##### pow
+Requires two `Float`s.
+Returns the first to the power of the second.
+```
+(pow 5.0 2.0)  # 25.0
+(pow 4.0 0.5)  # 2.0
+```
 
+##### eq
+Expects two values of any type and returns `true` *iff* they are equal.
+Note that two values of different types can never be equal, even if they represent the same value (e.g. `2` and `2.0`)
+```
+(eq (concat "a" "b") "ab")     # true
+(eq (add 1 2) 3.0)             # false
+(eq (list 1 2 3) (list 1 2 3)) # true
+```
+Alias: `=`
 
+##### id
+Expects two values of any type and returns `true` *iff* they are identical.
+Two variables are identical if they refer to the exact same data in memory.
+This means that when you modify one, you also modify the other as both represent the exact same value.
 
+The notion of identity only makes sense for values that can be modified, namely `List`s and `Dict`s.
+For all other types (like `Int` or `String`) `id` always returns the same value as `eq`
+```
+const a (list 1 2 3)
+const b (list 1 2 3)
+const a2 a
+
+(print (id "abc" "abc")) # true
+
+(print (id a b))   # false
+(print (eq a b))   # true
+(print (id a a2))  # true
+(print (eq a a2))  # true
+```
+
+#### lt
+Expects two numbers (which both can be of type `Int` or `Float`) or two `String`s.
+For two numbers, it returns `true` *iff* the first one is less than the second.
+For two `String`s, it returns `true`*iff* the first one would come before the second in an alphabetically sorted list.
+```
+(lt 1 2)       # true
+(lt 2 1)       # false
+(lt 1.0 2)     # true
+(lt "ab "ac")  # true
+```
 
 <!--
 ## Getting Started
