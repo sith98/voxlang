@@ -514,16 +514,244 @@ const a2 a
 (print (eq a a2))  # true
 ```
 
-#### lt
+##### lt
 Expects two numbers (which both can be of type `Int` or `Float`) or two `String`s.
 For two numbers, it returns `true` *iff* the first one is less than the second.
-For two `String`s, it returns `true`*iff* the first one would come before the second in an alphabetically sorted list.
+For two `String`s, it returns `true` *iff* the first one would come before the second in an alphabetically sorted list.
 ```
 (lt 1 2)       # true
 (lt 2 1)       # false
 (lt 1.0 2)     # true
 (lt "ab "ac")  # true
 ```
+
+##### min, max
+Take a variable number of arguments or just one argument that is list of numbers.
+They return the maximum or minimum number of the given numbers.
+The result is an `Int` if all inputs are `Int`s. Otherwise it is a `Float`.
+```
+(min -4 3.0)           # -4.0
+(max (list 1 2 3 4 5)) # 5
+```
+
+##### print
+Takes a variable number of arguments, converts them to strings, concatenates them, and prints them to the console with a new line character at the end.
+```
+(print "The answer is " (add 40 2)) # Prints "The answer is 42"
+(print (list 1 2 3))                # Prints "[1, 2, 3]"
+```
+
+##### read
+Takes no arguments. The function reads a single line from the console and returns it as a `String`.
+
+
+##### panic
+Takes a `String` as an argument and throws a runtime exception with the message `[panic] <arg>` where `<arg>` is the provided argument.
+
+
+##### random
+Returns a random `Float` in the range `[0, 1)`.
+
+
+##### charList
+Takes a `String` and returns a `List` that includes all characters of that string.
+```
+(charList "Hello")   # (list "H" "e" "l" "l" "o")
+```
+
+
+##### concat
+Takes a variable number of arguments or exactly one argument that is a `List`, converts all given values to `String`s, concatenates them and returns the concatenation as a `String`
+
+```
+(concat 1 2 3)                      # "123"
+(concat (list "one" "two" "three")) # "onetwothree"
+```
+
+
+##### int
+Takes a `Float`, `Int` or `String` and converts it two an `Int`.
+If the argument is an `Int`, the function simply returns it.
+If the argument is a `Float`, the function rounds it to the nearest representable `Int` towards zero.
+If the argument is a `String` and it cannot be converted to an `Int`, the function returns `nil`
+```
+(int -3.5)           # -3
+(int (pow 2.0 256.0) # 2,147,483,647 (maximum possible int)
+(int nan)            # 0
+(int "42")           # 42
+(int "test42")       # nil
+```
+
+
+##### float
+Takes a `Float`, `Int` or `String` and converts it two an `Float`.
+A `Float` or `Int` can always be converted accurately.
+If the argument is a `String` and it cannot be converted to an `Float`, the function returns `nil`
+```
+(float 3.5)     # 3.5
+(float 1)       # 1.0
+(float "42")    # 42.0
+(float "three") # nil
+```
+
+
+##### get
+Takes a collection (`List` or `Dict`) and an index (or a key for a dictionary) and returns the value at that index or key.
+If the collection is a `List` and the index is not an `Int` or not a valid index, the function throws an exception.
+If the collection is a `Dict` and the key does not exist in it, the function simply returns `nil`.
+```
+(get (list 1 2 3) 1)       # 2
+(get (list 1 2 3) "1")     # throws "invalid type exception"
+(get (list 1 2 3) 3)       # throws "index out of bounds exception"
+(get (dict 1 "a" 2 "b") 1) # a
+(get (dict 1 "a" 2 "b") 3) # nil
+```
+
+
+##### set
+Similar to get. It takes three arguments: the collection (`List` or `Dict`), the index (or key), and the new value.
+For a `List`, the index is expected to be an `Int` and not out of bounds.
+If the index is valid, the respective element is set to the new value.
+Otherwise, the function throws an exception.
+For a `Dict`, the function changes the value if the key already exists (based on equality, not identity). Otherwise, a new key-value-pair is created.
+```
+const l (list 1 2 3)
+const d (dict 1 "a")
+
+(set l 2 4)   # l is now [1, 2, 4]
+(set l 3 4)   # throws "index out of bounds exception"
+(set d 2 "b") # d is now {1: "a", 2: "b"}
+(set d 1 "c") # d is now {1: "c", 2: "b"}
+```
+
+
+##### size
+Takes a collection (`List` or `Dict`) and returns the number of values (or key-value-pairs for a `Dict`) in it.
+```
+(size (list 1 2 3))       # 3
+(size (dict 1 "a" 2 "b")) # 2
+```
+
+
+##### in
+Takes a collection (`List` or `Dict`) or a `Range `and a value.
+For a `List`, it returns `true` *iff* the value is in the list (based on equality, not identity).
+For a `Dict`, it returns `true` *iff* the the key exists in the dictionary.
+For a `Range`, it requires the value to be an `Int` or a `Float`.
+If it is, the function returns `true` *iff* `rangeStart <= value <= rangeEnd`
+```
+(in (list 1 2 3) 3)         # true
+(in (list 1 2 3) 0)         # false
+(in (dict 1 "a" 2 "b") 1)   # true
+(in (dict 1 "a" 2 "b") "a") # false
+(in (range 1 10 2) 10)      # true
+(in (range 1 10) 10.5)      # false
+```
+
+
+##### remove
+Takes a collection (`List` or `Dict`) and a value.
+For a `List`, the function removes the first element that is equal to that value from it.
+For a `Dict`, the function looks for the key and removes the key-value-pair if it finds it.
+In both cases, the function returns `true` *iff* it removed a value
+```
+const l (list 1 2 3 2)
+const d (dict 1 "a" 2 "b")
+
+(remove l 2)    # true, l is now [1, 2, 3]
+(remove d 1)    # true, d is now {2: "b"}
+(remove l 4)    # false, l does not change
+(remove d "b")  # false, d does not change
+```
+
+
+##### list
+Takes a variable number of arguments and returns a `List` including all of them.
+```
+(list 1 2 3)   # [1, 2, 3]
+(list "value") # ["value"]
+(list)         # []
+```
+
+
+##### push
+Takes a `List` and any value and appends that value to the list.
+```
+const l (list 1 2 3)
+(push l 4)  # list is now [1, 2, 3, 4]
+```
+
+
+##### pop
+Takes a `List`, removes the last element of it and returns it.
+If the list is empty, it returns `nil`.
+```
+const l (list 1 2)
+(pop l)  # 2, l is now [1]
+(pop l)  # 1, l is now []
+(pop l)  # nil, l did not change
+```
+
+
+##### dict
+Takes an even number of arguments.
+Returns a `Dict`, which includes all given key-value-pairs.
+```
+(dict 1 "a" 2 "b")  # {1: "a", 2: "b"}
+(dict 1)            # throws runtime exception
+(dict)              # {} (empty dictionary)
+```
+
+
+##### range
+Takes three `Int`s (a start value, an end value, and a step size) and returns a `Range`.
+The third argument can be omitted and then defaults to `1`.
+```
+(range 1 5)    # range (1, 2, 3, 4, 5)
+(range 1 8 2)  # range (1, 3, 5, 7)
+(range 5 1 -1) # range (5, 4, 3, 2, 1)
+(range 5 1 1)  # empty range
+```
+
+
+##### rangeProps
+Takes a `Range` and returns a `List` containing its three parameters (start, end, step).
+```
+(rangeProps (range 1 10))   # [1, 10, 1]
+(rangeProps (range 1 9 2))  # [1, 9, 2]
+```
+
+
+##### type
+Takes any value and returns its type as a `String`.
+```
+(type nil)        # "Nil"
+(type true)       # "Bool"
+(type 1)          # "Int"
+(type 2.0)        # "Float"
+(type "a")        # "String"
+(type (list))     # "List"
+(type (dict))     # "Dict"
+(type (range 1 5) # "Range"
+(type add)        # "Func"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!--
 ## Getting Started
