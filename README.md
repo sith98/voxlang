@@ -738,8 +738,8 @@ Takes any value and returns its type as a `String`.
 
 
 
-#### Standard Library
-More functions, constants and function aliases can be found in the [standard library](/src/runtime/stdlib/stdlib.vox).
+#### stdlib.vox
+More functions, constants and function aliases that are also available globally can be found in [stdlib.vox](/src/runtime/stdlib/stdlib.vox).
 
 
 
