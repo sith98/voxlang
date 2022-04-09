@@ -5,9 +5,13 @@ import runtime.VoxRuntimeException
 import runtime.runAst
 import java.io.File
 
-fun main() {
+fun main(args: Array<String>) {
+    if (args.size != 1) {
+        println("Interpreter expects exactly one argument: the source file to interpret")
+        return
+    }
     try {
-        val text = File("src/test/test.vox").readText()
+        val text = File(args[0]).readText()
         val tokens = TokenStream(tokenize(text))
 
         val ast = parse(tokens)
