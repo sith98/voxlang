@@ -606,6 +606,14 @@ If the collection is a `Dict` and the key does not exist in it, the function sim
 (get (dict 1 "a" 2 "b") 1) # a
 (get (dict 1 "a" 2 "b") 3) # nil
 ```
+Elements of a nested collection can be received using just one `get` call:
+```
+const points (list
+    (dict "x" 1 "y" 2)
+    (dict "x" 3 "y" 4)
+)
+(print (get points 1 "y")) # 4
+```
 
 
 ##### set
@@ -617,11 +625,13 @@ For a `Dict`, the function changes the value if the key already exists (based on
 ```
 const l (list 1 2 3)
 const d (dict 1 "a")
+const nested (list (list 1 2) (list 3 4))
 
 (set l 2 4)   # l is now [1, 2, 4]
 (set l 3 4)   # throws "index out of bounds exception"
 (set d 2 "b") # d is now {1: "a", 2: "b"}
 (set d 1 "c") # d is now {1: "c", 2: "b"}
+(set nested 0 1 1) # nested is now [[1, 0], [3, 4]]
 ```
 
 
