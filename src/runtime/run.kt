@@ -20,7 +20,7 @@ fun loadSpecialAndNativeFunctionsIntoScope(scope: Scope) {
 }
 
 fun loadStdLibIntoScope(scope: Scope) {
-    val source = object {}.javaClass.getResource("/runtime/stdlib/stdlib.vox").readText()
+    val source = object {}.javaClass.getResource("/runtime/stdlib/stdlib.vox")?.readText() ?: ""
     val stdLib = parse(TokenStream(tokenize(source)))
     val context = RunningContext(isStandardLibrary = true)
     for ((statement, line) in stdLib) {
