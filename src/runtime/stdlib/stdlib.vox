@@ -168,6 +168,24 @@ function indexes l
 end
 
 
+# Nil
+function isNil value
+    return (eq value nil)
+end
+
+function isNotNil value
+    return (not (isNil value))
+end
+
+function withDefaultLazy [value defaultFn]
+    return (choice (isNil value) (defaultFn) value)
+end
+
+function withDefault [value default]
+    return (withDefaultLazy value \[] default)
+end
+
+
 # operator aliases
 const + add
 const - sub
