@@ -274,9 +274,9 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         if (string !is StringValue) {
             expectedType(line, string, stringZero)
         }
-        val chars = string.value
+        val chars: MutableList<Value> = string.value
             .toCharArray()
-            .map { StringValue(it.toString()) as Value }
+            .map { StringValue(it.toString()) }
             .toMutableList()
         ListValue(chars)
     },
@@ -328,31 +328,17 @@ val nativeFunctions = mapOf<String, NativeFunction>(
 
     // collections (general)
     "get" to { line, args ->
-        argumentsCheck(line, args, 2)
-        val (collection, key) = args
-        when (collection) {
-            is ListValue -> {
-                if (key !is IntValue) {
-                    expectedType(line, key, intZero)
-                }
-                val index = key.value
-                val list = collection.value
-                if (0 <= index && index < list.size) {
-                    list[index]
-                } else {
-                    throw ListOutOfBoundException(line, listSize = list.size, index = index)
-                }
-            }
-            is DictValue -> {
-                val dict = collection.value
-                dict[key] ?: Nil
-            }
-            else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
+        if (args.size < 2) {
+            throw WrongNumberOfArgumentsException(line, 2, args.size)
         }
+        getNestedCollectionElement(line, args.first(), args.drop(1))
     },
     "set" to { line, args ->
-        argumentsCheck(line, args, 3)
-        val (collection, key, newValue) = args
+        if (args.size < 3) {
+            throw WrongNumberOfArgumentsException(line, 3, args.size)
+        }
+        val collection = getNestedCollectionElement(line, args.first(), args.drop(1).dropLast(2))
+        val (key, newValue) = args.takeLast(2)
         when (collection) {
             is ListValue -> {
                 if (key !is IntValue) {
@@ -509,6 +495,36 @@ val nativeFunctions = mapOf<String, NativeFunction>(
         StringValue(valueTypeName(value))
     }
 )
+
+tailrec fun getNestedCollectionElement(line: Int, collection: Value, keys: List<Value>): Value {
+    if (keys.isEmpty()) {
+        return collection
+    }
+    val key = keys.first()
+    return when (collection) {
+        is ListValue -> {
+            if (key !is IntValue) {
+                expectedType(line, key, intZero)
+            }
+            val index = key.value
+            val list = collection.value
+            if (0 <= index && index < list.size) {
+                getNestedCollectionElement(line, list[index], keys.drop(1))
+            } else {
+                throw ListOutOfBoundException(line, listSize = list.size, index = index)
+            }
+        }
+        is DictValue -> {
+            val result = collection.value[key]
+            if (result == null) {
+                Nil
+            } else {
+                getNestedCollectionElement(line, result, keys.drop(1))
+            }
+        }
+        else -> expectedOneOfTwoTypes(line, collection, listZero, dictZero)
+    }
+}
 
 fun variadicFunction(line: Int, args: List<Value>, fn: NativeFunction): Value {
     if (args.isEmpty()) {
